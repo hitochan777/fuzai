@@ -1,4 +1,4 @@
-from sound_detect import FrequencyDetector
+from sound_detector import SoundDetector
 from line_service import create_line_service
 import os
 import time
@@ -16,7 +16,7 @@ def main():
         ])
 
     # Create detector with common musical frequencies
-    detector = FrequencyDetector(
+    detector = SoundDetector(
         target_frequencies=[440.0, 880.0, 1320.0],  # A4, A5, E6
         detection_threshold=0.2,
         detection_duration=1.0
