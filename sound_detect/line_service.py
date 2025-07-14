@@ -38,6 +38,42 @@ class LineMessagingService:
         
         return self._send_request(url, payload)
     
+    def _send_request(self, url: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Send HTTP request to LINE API
+        
+        Args:
+            url: API endpoint URL
+            payload: Request payload
+            
+        Returns:
+            Dict containing response data or error information
+        """
+        try:
+            response = requests.post(url, headers=self.headers, json=payload)
+            
+            if response.status_code == 200:
+                return {
+                    "success": True,
+                    "status_code": response.status_code,
+                    "data": response.json() if response.content else None
+                }
+            else:
+                error_data = response.json() if response.content else {}
+                return {
+                    "success": False,
+                    "status_code": response.status_code,
+                    "error": error_data.get("message", "Unknown error"),
+                    "details": error_data.get("details", [])
+                }
+                
+        except requests.exceptions.RequestException as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "status_code": None
+            }
+    
 
 def create_line_service(channel_access_token: str) -> LineMessagingService:
     """
