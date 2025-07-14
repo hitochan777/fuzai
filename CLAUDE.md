@@ -10,7 +10,7 @@ This is a sound detection system that monitors microphone input for specific fre
 
 ### Core Components
 
-- **FrequencyDetector** (`sound_detect/sound_detect.py`): Main audio processing class that uses FFT analysis to detect target frequencies in real-time microphone input
+- **SoundDetector** (`sound_detect/sound_detector.py`): Main audio processing class that uses FFT analysis to detect target frequencies in real-time microphone input
 - **LineMessagingService** (`sound_detect/line_service.py`): Handles LINE messaging API integration for sending broadcast notifications
 - **Main Application** (`sound_detect/main.py`): Orchestrates the detection and notification workflow
 
@@ -38,6 +38,20 @@ uv add <package-name>
 
 # Remove dependencies
 uv remove <package-name>
+```
+
+## Testing
+
+**Development Practice**: When adding new features or fixing bugs, write tests first following TDD (Test-Driven Development) principles.
+
+The project includes unit tests for the core sound detection functionality:
+
+```bash
+# Run tests from the sound_detect/ directory
+uv run python test_sound_detector.py
+
+# Or run with verbose output
+uv run python -m unittest test_sound_detector -v
 ```
 
 ## Environment Setup
