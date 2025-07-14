@@ -1,13 +1,15 @@
 from sound_detector import SoundDetector
 from line_service import create_line_service
+from audio_capture import AudioCapture
 import os
 import time
 
 
 def main():
     line = create_line_service(os.environ["CHANNEL_ACCESS_TOKEN"])
-    def on_detection(frequencies):
-        print(f"Detected target frequencies: {frequencies}")
+    
+    def on_detection():
+        print("Detected target frequencies!")
         line.broadcast_message([
           {
             "type": "text",
@@ -24,25 +26,25 @@ def main():
     
     detector.set_detection_callback(on_detection)
     
+    # Create audio capture
+    audio_capture = AudioCapture(
+        sample_rate=detector.sample_rate,
+        chunk_size=detector.chunk_size
+    )
+    
     print("Starting frequency detection...")
     print(f"Target frequencies: {detector.target_frequencies}")
     print("Press Ctrl+C to stop")
     
-    if detector.start_listening():
+    if audio_capture.start_capture(detector.process_audio_chunk):
         try:
             while True:
                 time.sleep(1)
-                
-                # Get current spectrum every 2 seconds for debugging
-                spectrum = detector.get_current_spectrum(0.5)
-                if spectrum:
-                    top_freqs = spectrum[:3]
-                    print(f"Top frequencies: {[(f'{freq:.1f}Hz', f'{amp:.3f}') for freq, amp in top_freqs]}")
                     
         except KeyboardInterrupt:
             print("\nStopping...")
         finally:
-            detector.stop_listening()
+            audio_capture.stop_capture()
     else:
         print("Failed to start audio detection")
 
