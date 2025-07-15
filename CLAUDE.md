@@ -42,8 +42,6 @@ uv remove <package-name>
 
 ## Testing
 
-**Development Practice**: When adding new features or fixing bugs, write tests first following TDD (Test-Driven Development) principles.
-
 The project includes unit tests for the core sound detection functionality:
 
 ```bash
@@ -60,3 +58,7 @@ The application requires:
 - `CHANNEL_ACCESS_TOKEN`: LINE Channel Access Token for messaging API
 - Python 3.10+ (specified in pyproject.toml)
 - Audio input device (microphone) access
+
+## Development Practice
+* When adding new features or fixing bugs, write tests first following TDD (Test-Driven Development) principles.
+* In order to maximize the learning during development, I want you to break down the implementation task as small as possible, and stop after each task to make sure that I understand your implementation. You can also ask me some quiz about your implementation to check my understanding.

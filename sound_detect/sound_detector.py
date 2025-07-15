@@ -2,7 +2,13 @@ import time
 import numpy as np
 from typing import List, Callable, Optional, Dict
 from collections import defaultdict
+from enum import Enum
 from frequency_analyzer import FrequencyAnalyzer
+
+
+class DetectionState(Enum):
+    WAITING = "waiting"
+    COMPLETED = "completed"
 
 
 class SoundDetector:
@@ -13,18 +19,20 @@ class SoundDetector:
                  detection_threshold: float = 0.1,
                  detection_duration: float = 0.5,
                  min_matching_frequencies: int = 1,
-                 throttle_duration: float = 10.0):
+                 throttle_duration: float = 10.0,
+                 state_timeout: float = 5.0):
         """
         Initialize frequency detector for microphone input
         
         Args:
             sample_rate: Audio sample rate in Hz
             chunk_size: Number of samples per audio chunk
-            target_frequencies: List of frequencies to detect in Hz
+            target_frequencies: List of frequencies to detect in Hz (detected in sequence order)
             detection_threshold: Minimum amplitude threshold for detection (0.0-1.0)
             detection_duration: Minimum duration in seconds for sustained detection
             min_matching_frequencies: Minimum number of target frequencies that must match for detection
             throttle_duration: Time in seconds to wait before allowing another detection callback
+            state_timeout: Time in seconds to wait in current state before resetting to beginning
         """
         self.sample_rate = sample_rate
         self.chunk_size = chunk_size
@@ -33,11 +41,18 @@ class SoundDetector:
         self.detection_duration = detection_duration
         self.min_matching_frequencies = min_matching_frequencies
         self.throttle_duration = throttle_duration
+        self.state_timeout = state_timeout
         
         self.frequency_analyzer = FrequencyAnalyzer(sample_rate)
         self.detection_callback = None
         self.frequency_detection_times = defaultdict(list)
         self.last_detection_time = 0
+        
+        # State machine variables
+        self.current_state = DetectionState.WAITING
+        self.state_transition_time = time.time()
+        self.current_frequency_index = 0  # Index of the frequency we're currently waiting for
+        self.detected_frequencies = []  # Track which frequencies have been detected in sequence
         
     def set_detection_callback(self, callback: Callable[[], None]):
         """Set callback function to be called with detection result (True/False)"""
@@ -48,12 +63,15 @@ class SoundDetector:
         if not self.detection_callback:
             return
 
-        target_freqs = self._detect_target_frequencies(audio_data)
-        if len(target_freqs) >= self.min_matching_frequencies:
+        self._update_state_machine(audio_data)
+        
+        if self.current_state == DetectionState.COMPLETED:
             current_time = time.time()
             if current_time - self.last_detection_time >= self.throttle_duration:
                 self.last_detection_time = current_time
                 self.detection_callback()
+                # Reset state machine after successful detection
+                self._reset_state_machine()
             else:
                 print("Detected by throttled")
             
@@ -106,6 +124,62 @@ class SoundDetector:
                     break
                     
         return detected_targets
+    
+    def _update_state_machine(self, audio_data: np.ndarray):
+        """Update state machine based on detected frequencies"""
+        if not self.target_frequencies:
+            return
+            
+        current_time = time.time()
+        detected_freqs = self._detect_target_frequencies(audio_data)
+        
+        # Check for timeout
+        if (self.current_state == DetectionState.WAITING and 
+            current_time - self.state_transition_time > self.state_timeout):
+            self._reset_state_machine()
+            return
+        
+        if self.current_state == DetectionState.WAITING:
+            # Check if we've detected all frequencies in sequence
+            if self.current_frequency_index >= len(self.target_frequencies):
+                self.current_state = DetectionState.COMPLETED
+                self.state_transition_time = current_time
+                print(f"State: WAITING -> COMPLETED (all {len(self.target_frequencies)} frequencies detected)")
+                return
+            
+            expected_freq = self.target_frequencies[self.current_frequency_index]
+            
+            # Check if we detected the expected frequency
+            if expected_freq in detected_freqs:
+                self.detected_frequencies.append(expected_freq)
+                self.current_frequency_index += 1
+                self.state_transition_time = current_time
+                print(f"State: Detected frequency {self.current_frequency_index}/{len(self.target_frequencies)}: {expected_freq}Hz")
+                
+                # Check if this was the last frequency
+                if self.current_frequency_index >= len(self.target_frequencies):
+                    self.current_state = DetectionState.COMPLETED
+                    print(f"State: WAITING -> COMPLETED (all {len(self.target_frequencies)} frequencies detected)")
+            else:
+                # In sequential detection, we don't need to maintain all previous frequencies
+                # We only need to detect each frequency in order, then move to the next
+                pass
+                
+        elif self.current_state == DetectionState.COMPLETED:
+            # Stay in completed state until reset by callback
+            pass
+    
+    def _reset_state_machine(self):
+        """Reset state machine to initial state"""
+        self.current_state = DetectionState.WAITING
+        self.current_frequency_index = 0
+        self.detected_frequencies = []
+        self.state_transition_time = time.time()
+        print("State: Reset to WAITING")
+    
+    def get_current_state(self) -> DetectionState:
+        """Get current state of the detection state machine"""
+        return self.current_state
                 
     def __del__(self):
         """Cleanup on destruction"""
