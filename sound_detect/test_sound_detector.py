@@ -15,7 +15,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0, 880.0, 1320.0],
             detection_threshold=0.1,
             detection_duration=0.1,
-            min_matching_frequencies=1
         )
         # Generate 440Hz sine wave (one of the target frequencies)
         duration = 0.1
@@ -37,7 +36,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0, 880.0, 1320.0],
             detection_threshold=0.1,
             detection_duration=0.1,
-            min_matching_frequencies=1
         )
         # Generate signal with 440Hz and 880Hz (both target frequencies)
         duration = 0.1
@@ -61,7 +59,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0, 880.0, 1320.0],
             detection_threshold=0.1,
             detection_duration=0.1,
-            min_matching_frequencies=1
         )
         # Generate 1000Hz sine wave (not a target frequency)
         duration = 0.1
@@ -83,7 +80,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0, 880.0, 1320.0],
             detection_threshold=0.5,  # Higher threshold
             detection_duration=0.1,
-            min_matching_frequencies=1
         )
         # Generate signal with low amplitude target frequency and louder noise
         duration = 0.1
@@ -109,7 +105,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0, 880.0, 1320.0],
             detection_threshold=0.1,
             detection_duration=0.1,
-            min_matching_frequencies=1
         )
         # Generate 440Hz sine wave
         duration = 0.1
@@ -134,7 +129,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0, 880.0],  # Only 2 frequencies for this test
             detection_threshold=0.1,
             detection_duration=0.1,
-            min_matching_frequencies=1,
             throttle_duration=0.1  # Reduce throttle for testing
         )
         callback = MagicMock()
@@ -168,7 +162,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0, 880.0, 1320.0],
             detection_threshold=0.1,
             detection_duration=0.1,
-            min_matching_frequencies=1
         )
         callback = MagicMock()
         detector.set_detection_callback(callback)
@@ -189,7 +182,6 @@ class TestSoundDetector(unittest.TestCase):
         """Test that frequencies must be detected in the correct order."""
         detector = SoundDetector(
             target_frequencies=[440.0, 880.0, 1320.0],
-            min_matching_frequencies=1,
             detection_duration=0.1,
             throttle_duration=0.1  # Reduce throttle for testing
         )
@@ -242,7 +234,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0, 880.0, 1320.0],
             detection_threshold=0.1,
             detection_duration=0.1,
-            min_matching_frequencies=1
         )
         empty_data = np.array([])
         detected_targets = detector._detect_target_frequencies(empty_data)
@@ -256,7 +247,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0, 880.0, 1320.0],
             detection_threshold=0.1,
             detection_duration=0.1,
-            min_matching_frequencies=1
         )
         # Generate white noise
         np.random.seed(42)  # For reproducible tests
@@ -275,7 +265,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0, 880.0],  # Only 2 frequencies for this test
             detection_threshold=0.1,
             detection_duration=0.1,
-            min_matching_frequencies=1,
             state_timeout=2.0
         )
         callback = MagicMock()
@@ -329,7 +318,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0, 880.0, 1320.0],
             detection_threshold=0.1,
             detection_duration=0.1,
-            min_matching_frequencies=1,
             state_timeout=0.5  # Short timeout for testing
         )
         callback = MagicMock()
@@ -368,7 +356,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0, 880.0, 1320.0],
             detection_threshold=0.1,
             detection_duration=0.1,
-            min_matching_frequencies=1,
             state_timeout=2.0
         )
         callback = MagicMock()
@@ -407,7 +394,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0, 880.0, 1320.0],
             detection_threshold=0.1,
             detection_duration=0.1,
-            min_matching_frequencies=1,
             state_timeout=2.0,
             throttle_duration=0.1  # Reduce throttle for testing
         )
@@ -463,7 +449,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0],
             detection_threshold=0.1,
             detection_duration=0.1,
-            min_matching_frequencies=1,
             state_timeout=2.0,
             throttle_duration=0.1  # Reduce throttle for testing
         )

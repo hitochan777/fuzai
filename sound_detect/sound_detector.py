@@ -18,7 +18,6 @@ class SoundDetector:
                  target_frequencies: List[float] = None,
                  detection_threshold: float = 0.1,
                  detection_duration: float = 0.5,
-                 min_matching_frequencies: int = 1,
                  throttle_duration: float = 10.0,
                  state_timeout: float = 5.0):
         """
@@ -30,7 +29,6 @@ class SoundDetector:
             target_frequencies: List of frequencies to detect in Hz (detected in sequence order)
             detection_threshold: Minimum amplitude threshold for detection (0.0-1.0)
             detection_duration: Minimum duration in seconds for sustained detection
-            min_matching_frequencies: Minimum number of target frequencies that must match for detection
             throttle_duration: Time in seconds to wait before allowing another detection callback
             state_timeout: Time in seconds to wait in current state before resetting to beginning
         """
@@ -39,7 +37,6 @@ class SoundDetector:
         self.target_frequencies = target_frequencies or [440.0, 880.0, 1320.0]
         self.detection_threshold = detection_threshold
         self.detection_duration = detection_duration
-        self.min_matching_frequencies = min_matching_frequencies
         self.throttle_duration = throttle_duration
         self.state_timeout = state_timeout
         

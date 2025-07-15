@@ -22,7 +22,6 @@ def main():
         target_frequencies=[502, 648],
         detection_threshold=0.2,
         detection_duration=3.0,
-        min_matching_frequencies=2,
     )
     
     detector.set_detection_callback(on_detection)
