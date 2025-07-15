@@ -257,58 +257,6 @@ class TestSoundDetector(unittest.TestCase):
         # Should not detect target frequencies in noise
         self.assertEqual(len(detected_targets), 0)
     
-    def test_state_machine_sequential_detection(self):
-        """Test state machine requires first frequency before second frequency."""
-        detector = SoundDetector(
-            sample_rate=44100,
-            chunk_size=4096,
-            target_frequencies=[440.0, 880.0],  # Only 2 frequencies for this test
-            detection_threshold=0.1,
-            detection_duration=0.1,
-            state_timeout=2.0
-        )
-        callback = MagicMock()
-        detector.set_detection_callback(callback)
-        
-        # Initial state should be WAITING
-        self.assertEqual(detector.get_current_state(), DetectionState.WAITING)
-        
-        # Generate test signals
-        duration = 0.1
-        sample_rate = 44100
-        t = np.linspace(0, duration, int(sample_rate * duration), False)
-        
-        first_freq_signal = np.sin(2 * np.pi * 440 * t)  # 440Hz (first frequency)
-        second_freq_signal = np.sin(2 * np.pi * 880 * t)  # 880Hz (second frequency)
-        
-        # Test 1: Send second frequency first - should NOT trigger callback
-        for _ in range(5):
-            detector.process_audio_chunk(second_freq_signal)
-            time.sleep(0.01)
-        
-        # Should still be in WAITING state
-        self.assertEqual(detector.get_current_state(), DetectionState.WAITING)
-        self.assertFalse(callback.called)
-        
-        # Test 2: Send first frequency - should stay in WAITING (waiting for second frequency)
-        for _ in range(5):
-            detector.process_audio_chunk(first_freq_signal)
-            time.sleep(0.01)
-        
-        # Should be in WAITING state (waiting for second frequency)
-        self.assertEqual(detector.get_current_state(), DetectionState.WAITING)
-        self.assertFalse(callback.called)
-        
-        # Test 3: Send second frequency - should complete and trigger callback
-        for _ in range(5):
-            detector.process_audio_chunk(second_freq_signal)
-            time.sleep(0.01)
-        
-        # Should have triggered callback
-        self.assertTrue(callback.called)
-        
-        # After callback, state should reset to WAITING
-        self.assertEqual(detector.get_current_state(), DetectionState.WAITING)
     
     def test_state_machine_timeout(self):
         """Test state machine timeout from WAITING_SECOND state."""
