@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import time
 from unittest.mock import MagicMock
-from sound_detector import SoundDetector
+from sound_detector import SoundDetector, DetectionState
 
 
 class TestSoundDetector(unittest.TestCase):
@@ -15,7 +15,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0, 880.0, 1320.0],
             detection_threshold=0.1,
             detection_duration=0.1,
-            min_matching_frequencies=1
         )
         # Generate 440Hz sine wave (one of the target frequencies)
         duration = 0.1
@@ -37,7 +36,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0, 880.0, 1320.0],
             detection_threshold=0.1,
             detection_duration=0.1,
-            min_matching_frequencies=1
         )
         # Generate signal with 440Hz and 880Hz (both target frequencies)
         duration = 0.1
@@ -61,7 +59,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0, 880.0, 1320.0],
             detection_threshold=0.1,
             detection_duration=0.1,
-            min_matching_frequencies=1
         )
         # Generate 1000Hz sine wave (not a target frequency)
         duration = 0.1
@@ -83,7 +80,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0, 880.0, 1320.0],
             detection_threshold=0.5,  # Higher threshold
             detection_duration=0.1,
-            min_matching_frequencies=1
         )
         # Generate signal with low amplitude target frequency and louder noise
         duration = 0.1
@@ -109,7 +105,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0, 880.0, 1320.0],
             detection_threshold=0.1,
             detection_duration=0.1,
-            min_matching_frequencies=1
         )
         # Generate 440Hz sine wave
         duration = 0.1
@@ -127,28 +122,33 @@ class TestSoundDetector(unittest.TestCase):
         self.assertIn(440.0, detected_targets)
         
     def test_process_audio_chunk_with_callback(self):
-        """Test process_audio_chunk triggers callback when frequency detected."""
+        """Test process_audio_chunk triggers callback when both frequencies detected in sequence."""
         detector = SoundDetector(
             sample_rate=44100,
             chunk_size=4096,
-            target_frequencies=[440.0, 880.0, 1320.0],
+            target_frequencies=[440.0, 880.0],  # Only 2 frequencies for this test
             detection_threshold=0.1,
             detection_duration=0.1,
-            min_matching_frequencies=1
+            throttle_duration=0.1  # Reduce throttle for testing
         )
         callback = MagicMock()
         detector.set_detection_callback(callback)
         
-        # Generate 440Hz sine wave that should trigger detection
+        # Generate test signals
         duration = 0.1
         sample_rate = 44100
-        frequency = 440.0
         t = np.linspace(0, duration, int(sample_rate * duration), False)
-        sine_wave = np.sin(2 * np.pi * frequency * t)
+        first_freq_signal = np.sin(2 * np.pi * 440 * t)  # 440Hz (first frequency)
+        second_freq_signal = np.sin(2 * np.pi * 880 * t)  # 880Hz (second frequency)
         
-        # Process multiple chunks to ensure sustained detection
+        # Process first frequency to transition to WAITING_SECOND
         for _ in range(5):
-            detector.process_audio_chunk(sine_wave)
+            detector.process_audio_chunk(first_freq_signal)
+            time.sleep(0.01)
+        
+        # Process second frequency to complete detection
+        for _ in range(5):
+            detector.process_audio_chunk(second_freq_signal)
             time.sleep(0.01)
             
         # Callback should have been called at least once
@@ -162,7 +162,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0, 880.0, 1320.0],
             detection_threshold=0.1,
             detection_duration=0.1,
-            min_matching_frequencies=1
         )
         callback = MagicMock()
         detector.set_detection_callback(callback)
@@ -179,43 +178,52 @@ class TestSoundDetector(unittest.TestCase):
         # Callback should not have been called
         self.assertFalse(callback.called)
         
-    def test_min_matching_frequencies_requirement(self):
-        """Test that min_matching_frequencies requirement is enforced."""
-        # Set detector to require 2 matching frequencies
+    def test_sequential_detection_order_matters(self):
+        """Test that frequencies must be detected in the correct order."""
         detector = SoundDetector(
             target_frequencies=[440.0, 880.0, 1320.0],
-            min_matching_frequencies=2,
-            detection_duration=0.1
+            detection_duration=0.1,
+            throttle_duration=0.1  # Reduce throttle for testing
         )
         
         callback = MagicMock()
         detector.set_detection_callback(callback)
         
-        # Generate signal with only one target frequency (440Hz)
+        # Generate test signals
         duration = 0.1
         sample_rate = 44100
-        frequency = 440.0
         t = np.linspace(0, duration, int(sample_rate * duration), False)
-        sine_wave = np.sin(2 * np.pi * frequency * t)
         
-        # Process multiple chunks
-        for _ in range(5):
-            detector.process_audio_chunk(sine_wave)
+        freq1_signal = np.sin(2 * np.pi * 440 * t)    # 440Hz (first)
+        freq2_signal = np.sin(2 * np.pi * 880 * t)    # 880Hz (second)
+        freq3_signal = np.sin(2 * np.pi * 1320 * t)   # 1320Hz (third)
+        
+        # Test 1: Send frequencies in wrong order (3, 1, 2)
+        for _ in range(3):
+            detector.process_audio_chunk(freq3_signal)
+            time.sleep(0.01)
+        for _ in range(3):
+            detector.process_audio_chunk(freq1_signal)
+            time.sleep(0.01)
+        for _ in range(3):
+            detector.process_audio_chunk(freq2_signal)
             time.sleep(0.01)
             
-        # Callback should not be called since we need 2 frequencies but only have 1
+        # Should not have triggered callback (wrong order)
         self.assertFalse(callback.called)
         
-        # Now test with signal containing 2 target frequencies
-        signal_2_freqs = (np.sin(2 * np.pi * 440 * t) + 
-                         np.sin(2 * np.pi * 880 * t))
-        
-        # Process multiple chunks with 2 frequencies
-        for _ in range(5):
-            detector.process_audio_chunk(signal_2_freqs)
+        # Test 2: Send frequencies in correct order (1, 2, 3)
+        for _ in range(3):
+            detector.process_audio_chunk(freq1_signal)
+            time.sleep(0.01)
+        for _ in range(3):
+            detector.process_audio_chunk(freq2_signal)
+            time.sleep(0.01)
+        for _ in range(3):
+            detector.process_audio_chunk(freq3_signal)
             time.sleep(0.01)
             
-        # Now callback should be called
+        # Should have triggered callback (correct order)
         self.assertTrue(callback.called)
         
     def test_empty_audio_data(self):
@@ -226,7 +234,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0, 880.0, 1320.0],
             detection_threshold=0.1,
             detection_duration=0.1,
-            min_matching_frequencies=1
         )
         empty_data = np.array([])
         detected_targets = detector._detect_target_frequencies(empty_data)
@@ -240,7 +247,6 @@ class TestSoundDetector(unittest.TestCase):
             target_frequencies=[440.0, 880.0, 1320.0],
             detection_threshold=0.1,
             detection_duration=0.1,
-            min_matching_frequencies=1
         )
         # Generate white noise
         np.random.seed(42)  # For reproducible tests
@@ -250,6 +256,83 @@ class TestSoundDetector(unittest.TestCase):
         
         # Should not detect target frequencies in noise
         self.assertEqual(len(detected_targets), 0)
+    
+    
+    def test_state_machine_timeout(self):
+        """Test state machine timeout from WAITING_SECOND state."""
+        detector = SoundDetector(
+            sample_rate=44100,
+            chunk_size=4096,
+            target_frequencies=[440.0, 880.0, 1320.0],
+            detection_threshold=0.1,
+            detection_duration=0.1,
+            state_timeout=0.5  # Short timeout for testing
+        )
+        callback = MagicMock()
+        detector.set_detection_callback(callback)
+        
+        # Generate first frequency signal
+        duration = 0.1
+        sample_rate = 44100
+        t = np.linspace(0, duration, int(sample_rate * duration), False)
+        first_freq_signal = np.sin(2 * np.pi * 440 * t)
+        
+        # Send first frequency to transition to WAITING_SECOND
+        for _ in range(5):
+            detector.process_audio_chunk(first_freq_signal)
+            time.sleep(0.01)
+        
+        # Should be in WAITING state (waiting for second frequency)
+        self.assertEqual(detector.get_current_state(), DetectionState.WAITING)
+        
+        # Wait for timeout
+        time.sleep(0.6)
+        
+        # Process silence to trigger timeout check
+        silence = np.zeros(int(sample_rate * duration))
+        detector.process_audio_chunk(silence)
+        
+        # Should reset to WAITING due to timeout
+        self.assertEqual(detector.get_current_state(), DetectionState.WAITING)
+        self.assertFalse(callback.called)
+    
+    def test_state_machine_reset_on_lost_first_frequency(self):
+        """Test state machine resets when first frequency is lost in WAITING_SECOND state."""
+        detector = SoundDetector(
+            sample_rate=44100,
+            chunk_size=4096,
+            target_frequencies=[440.0, 880.0, 1320.0],
+            detection_threshold=0.1,
+            detection_duration=0.1,
+            state_timeout=2.0
+        )
+        callback = MagicMock()
+        detector.set_detection_callback(callback)
+        
+        # Generate test signals
+        duration = 0.1
+        sample_rate = 44100
+        t = np.linspace(0, duration, int(sample_rate * duration), False)
+        
+        first_freq_signal = np.sin(2 * np.pi * 440 * t)  # 440Hz
+        noise_signal = np.sin(2 * np.pi * 1000 * t)     # 1000Hz (not a target)
+        
+        # Send first frequency to transition to WAITING_SECOND
+        for _ in range(5):
+            detector.process_audio_chunk(first_freq_signal)
+            time.sleep(0.01)
+        
+        # Should be in WAITING state (waiting for second frequency)
+        self.assertEqual(detector.get_current_state(), DetectionState.WAITING)
+        
+        # Send noise (no target frequencies) - should reset to WAITING
+        for _ in range(5):
+            detector.process_audio_chunk(noise_signal)
+            time.sleep(0.01)
+        
+        # Should reset to WAITING
+        self.assertEqual(detector.get_current_state(), DetectionState.WAITING)
+        self.assertFalse(callback.called)
 
 
 if __name__ == '__main__':

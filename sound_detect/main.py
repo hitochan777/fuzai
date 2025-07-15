@@ -19,9 +19,9 @@ def main():
 
     # Create detector with common musical frequencies
     detector = SoundDetector(
-        target_frequencies=[440.0, 880.0, 1320.0],  # A4, A5, E6
+        target_frequencies=[502, 648],
         detection_threshold=0.2,
-        detection_duration=1.0
+        detection_duration=3.0,
     )
     
     detector.set_detection_callback(on_detection)
