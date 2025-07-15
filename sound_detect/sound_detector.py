@@ -132,6 +132,7 @@ class SoundDetector:
         
         # Check for timeout
         if (self.current_state == DetectionState.WAITING and 
+            self.current_frequency_index and
             current_time - self.state_transition_time > self.state_timeout):
             self._reset_state_machine()
             return
@@ -157,14 +158,6 @@ class SoundDetector:
                 if self.current_frequency_index >= len(self.target_frequencies):
                     self.current_state = DetectionState.COMPLETED
                     print(f"State: WAITING -> COMPLETED (all {len(self.target_frequencies)} frequencies detected)")
-            else:
-                # In sequential detection, we don't need to maintain all previous frequencies
-                # We only need to detect each frequency in order, then move to the next
-                pass
-                
-        elif self.current_state == DetectionState.COMPLETED:
-            # Stay in completed state until reset by callback
-            pass
     
     def _reset_state_machine(self):
         """Reset state machine to initial state"""
