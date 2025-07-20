@@ -5,9 +5,17 @@ Flask server that controls a servo motor on Raspberry Pi with OTP authentication
 ## Features
 
 - Generate one-time passcodes (OTP) valid for 30 seconds
-- Control servo motor rotation via `/unlock` endpoint
+- Control servo motor unlock via `/unlock` endpoint (90° default)
 - Secure authentication using time-based OTPs
 - RESTful API with JSON responses
+- Modular architecture with separated concerns
+
+## Architecture
+
+- **app.py**: Flask application with API endpoints
+- **servo_controller.py**: ServoController class for hardware control
+- **otp_manager.py**: OTPManager class for secure authentication
+- **requirements.txt**: Python dependencies
 
 ## Hardware Setup
 
@@ -43,18 +51,18 @@ Response:
 }
 ```
 
-### Unlock (rotate servo)
+### Unlock servo
 ```bash
 curl -X POST http://localhost:5000/unlock \
   -H "Content-Type: application/json" \
-  -d '{"otp": "123456", "angle": 90}'
+  -d '{"otp": "123456"}'
 ```
 
 Response:
 ```json
 {
   "status": "success",
-  "message": "Servo rotated to 90 degrees",
+  "message": "Servo unlocked to 90 degrees",
   "angle": 90
 }
 ```
@@ -62,5 +70,5 @@ Response:
 ## API Endpoints
 
 - `POST /generate-otp`: Generate a new OTP
-- `POST /unlock`: Rotate servo (requires valid OTP and angle 0-180)
-- `GET /health`: Health check endpoint
+- `POST /unlock`: Unlock servo to predetermined angle (requires valid OTP only)
+- `GET /health`: Health check endpoint with active OTP count
