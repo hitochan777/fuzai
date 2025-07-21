@@ -26,7 +26,7 @@ def initialize_services(app):
             "text": f"Intercom rang just now: {url}"
           }
         ])
-        if not result.success:
+        if not result["success"]:
             print(f"Failed to notify via LINE: {result}")
 
     # Create detector with common musical frequencies
