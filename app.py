@@ -1,7 +1,8 @@
 from flask import Flask, request, jsonify, g
 from servo_controller import ServoController
 from otp_manager import OTPManager
-from line_service import create_line_service
+# from line_service import create_line_service
+from email_service import create_email_service
 from sound_detector import SoundDetector
 from audio_capture import AudioCapture
 import os
@@ -14,20 +15,25 @@ app = Flask(__name__)
 def initialize_services(app):
     servo_controller = ServoController(pin=18)
     otp_manager = OTPManager(expiry_seconds=30)
-    line = create_line_service(os.environ["CHANNEL_ACCESS_TOKEN"])
+    # line = create_line_service(os.environ["CHANNEL_ACCESS_TOKEN"])
+    email_service = create_email_service(
+        api_key=os.environ["RESEND_API_KEY"],
+        from_email=os.environ["FROM_EMAIL"],
+        to_emails=os.environ["TO_EMAILS"].split(",")
+    )
     
     def on_detection():
         print("Detected target frequencies!")
         otp = otp_manager.generate_otp()
         url = API_ENDPOINT + f"/unlock?otp={otp}"
-        result = line.broadcast_message([
+        result = email_service.broadcast_message([
           {
             "type": "text",
             "text": f"Intercom rang just now: {url}"
           }
         ])
         if not result["success"]:
-            print(f"Failed to notify via LINE: {result}")
+            print(f"Failed to notify via email: {result}")
 
     # Create detector with common musical frequencies
     detector = SoundDetector(
