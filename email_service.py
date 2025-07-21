@@ -17,6 +17,7 @@ class EmailNotificationService:
         self.api_key = api_key
         self.from_email = from_email
         self.to_emails = to_emails
+        # FIXME: changing global variable here so it can contaminate other instances
         resend.api_key = api_key
 
     

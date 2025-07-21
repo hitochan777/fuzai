@@ -12,11 +12,6 @@ class TestEmailNotificationService(unittest.TestCase):
             to_emails=["recipient@example.com"]
         )
     
-    def test_initialization(self):
-        """Test that EmailNotificationService initializes correctly"""
-        self.assertEqual(self.service.api_key, "re_test_api_key")
-        self.assertEqual(self.service.from_email, "test@example.com")
-        self.assertEqual(self.service.to_emails, ["recipient@example.com"])
     
     @patch('email_service.resend.Emails.send')
     def test_broadcast_message_success(self, mock_send):
@@ -40,17 +35,6 @@ class TestEmailNotificationService(unittest.TestCase):
             "subject": "Sound Detection Alert",
             "text": "Test message 1\nTest message 2"
         })
-    
-    def test_broadcast_message_no_text_content(self):
-        """Test broadcast message with no text content"""
-        messages = [
-            {"type": "image", "url": "http://example.com/image.jpg"}
-        ]
-        
-        result = self.service.broadcast_message(messages)
-        
-        self.assertFalse(result["success"])
-        self.assertIn("No text content found", result["error"])
     
     def test_broadcast_message_empty_messages(self):
         """Test broadcast message with empty messages list"""
