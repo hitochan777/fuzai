@@ -8,7 +8,7 @@ import os
 import atexit
 import time
 
-BASE_URL = "TODO_HERE"
+API_ENDPOINT = os.environ.get("BASE_URL")
 app = Flask(__name__)
 
 def initialize_services(app):
@@ -19,7 +19,7 @@ def initialize_services(app):
     def on_detection():
         print("Detected target frequencies!")
         otp = otp_manager.generate_otp()
-        url = BASE_URL + f"?otp={otp}"
+        url = API_ENDPOINT + f"/unlock?otp={otp}"
         line.broadcast_message([
           {
             "type": "text",
@@ -51,13 +51,9 @@ def initialize_services(app):
     app.otp_manager = otp_manager
     app.servo_controller = servo_controller
 
-@app.route('/unlock', methods=['POST'])
+@app.route('/unlock', methods=['GET'])
 def unlock():
-    data = request.get_json()
-    if not data:
-        return jsonify({'status': 'error', 'message': 'No JSON data provided'}), 400
-    
-    otp = data.get('otp')
+    otp = request.args.get('otp')
     
     if not otp:
         return jsonify({'status': 'error', 'message': 'OTP is required'}), 400
