@@ -11,6 +11,7 @@ dependencies = [
     "flask>=3.0.0",
     # "RPi.GPIO>=0.7.1",
     "rpi",
+    "resend>=2.11.0",
 ]
 
 [tool.uv.sources]
