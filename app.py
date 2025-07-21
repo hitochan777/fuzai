@@ -20,12 +20,14 @@ def initialize_services(app):
         print("Detected target frequencies!")
         otp = otp_manager.generate_otp()
         url = API_ENDPOINT + f"/unlock?otp={otp}"
-        line.broadcast_message([
+        result = line.broadcast_message([
           {
             "type": "text",
             "text": f"Intercom rang just now: {url}"
           }
         ])
+        if not result.success:
+            print(f"Failed to notify via LINE: {result}")
 
     # Create detector with common musical frequencies
     detector = SoundDetector(
