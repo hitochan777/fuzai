@@ -1,6 +1,16 @@
 import RPi.GPIO as GPIO
 import time
 
+# High pulse duration (ms) for different servo angles
+# Reference: https://docs.freenove.com/projects/fnk0025/en/latest/fnk0025/codes/python-lang/Servo.html
+high_time = {
+    0: 0.5,
+    45: 1,
+    90: 1.5,
+    135: 2,
+    180: 2.5
+}
+
 class ServoController:
     def __init__(self, pin=18, frequency=50, unlock_angle=90):
         self.pin = pin
@@ -13,29 +23,41 @@ class ServoController:
         GPIO.setup(self.pin, GPIO.OUT)
         self.servo = GPIO.PWM(self.pin, self.frequency)
         self.servo.start(0)
+        # time.sleep(1)  # Give servo time to initialize
     
     def angle_to_duty_cycle(self, angle):
-        return 2 + (angle / 18)
+        # Duty cycle = (high_time / period) * 100
+        # Period = 1000ms / frequency_hz
+        return ((high_time[angle]) / (1000 / self.frequency)) * 100
     
     def rotate_to_angle(self, angle):
-        if not (0 <= angle <= 180):
+        if angle not in high_time:
             raise ValueError("Angle must be between 0 and 180 degrees")
         
         try:
-            duty = self.angle_to_duty_cycle(angle)
-            self.servo.ChangeDutyCycle(duty)
-            time.sleep(0.5)
-            self.servo.ChangeDutyCycle(0)
+            self.servo.ChangeDutyCycle(self.angle_to_duty_cycle(angle))
+            time.sleep(1)
             return True
         except Exception as e:
             raise RuntimeError(f"Servo control error: {str(e)}")
     
     def unlock(self):
-        return self.rotate_to_angle(self.unlock_angle)
+        print("start unlock")
+        self.rotate_to_angle(90)
+        self.rotate_to_angle(0)
+        self.rotate_to_angle(180)
+        # return self.rotate_to_angle(self.unlock_angle)
     
     def cleanup(self):
         self.servo.stop()
         GPIO.cleanup()
+
+    def __enter__(self):
+        return self
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.cleanup()
+
+if __name__ == "__main__":
+   with ServoController() as servo:
+       servo.unlock()
