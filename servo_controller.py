@@ -1,6 +1,8 @@
 import RPi.GPIO as GPIO
 import time
 
+# High pulse duration (ms) for different servo angles
+# Reference: https://docs.freenove.com/projects/fnk0025/en/latest/fnk0025/codes/python-lang/Servo.html
 high_time = {
     0: 0.5,
     45: 1,
@@ -24,6 +26,8 @@ class ServoController:
         # time.sleep(1)  # Give servo time to initialize
     
     def angle_to_duty_cycle(self, angle):
+        # Duty cycle = (high_time / period) * 100
+        # Period = 1000ms / frequency_hz
         return ((high_time[angle]) / (1000 / self.frequency)) * 100
     
     def rotate_to_angle(self, angle):
