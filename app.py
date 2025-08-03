@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, g
+from flask import Flask, request, jsonify, g, render_template
 from servo_controller import ServoController
 from otp_manager import OTPManager
 from line_service import create_line_service
@@ -61,6 +61,19 @@ def initialize_services(app, servo_controller):
 @app.route('/unlock', methods=['GET'])
 def unlock():
     otp = request.args.get('otp')
+    
+    if not otp:
+        return jsonify({'status': 'error', 'message': 'OTP is required'}), 400
+    
+    if not app.otp_manager.validate_otp(otp):
+        return jsonify({'status': 'error', 'message': 'Invalid or expired OTP'}), 401
+    
+    return render_template('unlock.html', otp=otp)
+
+@app.route('/perform-unlock', methods=['POST'])
+def perform_unlock():
+    data = request.get_json()
+    otp = data.get('otp') if data else None
     
     if not otp:
         return jsonify({'status': 'error', 'message': 'OTP is required'}), 400

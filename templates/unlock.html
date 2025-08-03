@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Door Unlock</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .unlock-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .unlock-btn:hover {
+            background-color: #45a049;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Door Unlock Control</h2>
+        <p>Click the button below to unlock the door</p>
+        <button class="unlock-btn" onclick="unlockDoor()">🔓 Unlock Door</button>
+        <div id="message" class="message" style="display: none;"></div>
+    </div>
+    
+    <script>
+        async function unlockDoor() {
+            const button = document.querySelector('.unlock-btn');
+            const messageDiv = document.getElementById('message');
+            
+            button.disabled = true;
+            button.textContent = 'Unlocking...';
+            
+            try {
+                const response = await fetch('/perform-unlock', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ otp: '{{ otp }}' })
+                });
+                
+                const data = await response.json();
+                
+                messageDiv.style.display = 'block';
+                if (data.status === 'success') {
+                    messageDiv.className = 'message success';
+                    messageDiv.textContent = 'Door unlocked successfully!';
+                    button.textContent = '✓ Unlocked';
+                } else {
+                    messageDiv.className = 'message error';
+                    messageDiv.textContent = data.message || 'Failed to unlock door';
+                    button.disabled = false;
+                    button.textContent = '🔓 Unlock Door';
+                }
+            } catch (error) {
+                messageDiv.style.display = 'block';
+                messageDiv.className = 'message error';
+                messageDiv.textContent = 'Network error occurred';
+                button.disabled = false;
+                button.textContent = '🔓 Unlock Door';
+            }
+        }
+    </script>
+</body>
+</html>
