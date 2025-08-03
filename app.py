@@ -65,9 +65,6 @@ def unlock():
     if not otp:
         return jsonify({'status': 'error', 'message': 'OTP is required'}), 400
     
-    if not app.otp_manager.validate_otp(otp):
-        return jsonify({'status': 'error', 'message': 'Invalid or expired OTP'}), 401
-    
     return render_template('unlock.html', otp=otp)
 
 @app.route('/perform-unlock', methods=['POST'])
