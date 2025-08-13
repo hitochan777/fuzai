@@ -36,8 +36,9 @@ def initialize_services(app, servo_controller):
 
     # Create detector with common musical frequencies
     detector = SoundDetector(
-        target_frequencies=[502, 648],
-        detection_threshold=0.2,
+        # target_frequencies=[502, 648],
+        target_frequencies=[660, 521],
+        detection_threshold=0.1,
         detection_duration=3.0,
     )
     detector.set_detection_callback(on_detection)

@@ -97,8 +97,8 @@ class SoundDetector:
         for target_freq in self.target_frequencies:
             # Check if any dominant frequency matches this target
             for detected_freq, amplitude in dominant_freqs:
-                if not (self.frequency_analyzer.is_frequency_match(
-                    detected_freq, target_freq) and 
+                if not (any(self.frequency_analyzer.is_frequency_match(
+                    detected_freq, target_freq *(i+1)) for i in range(3)) and 
                     amplitude >= threshold_amplitude):
                     continue
 
