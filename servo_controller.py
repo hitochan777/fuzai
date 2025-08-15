@@ -44,7 +44,6 @@ class ServoController:
             duty_cycle = self.angle_to_duty_cycle(angle)
             self.servo.ChangeDutyCycle(duty_cycle)
             print(f"Rotating to {angle}° (pulse: {self.angle_to_pulse_width(angle):.2f}ms, duty: {duty_cycle:.2f}%)")
-            time.sleep(0.5)  # Reduced sleep time for smoother operation
             return True
         except Exception as e:
             raise RuntimeError(f"Servo control error: {str(e)}")
@@ -54,9 +53,9 @@ class ServoController:
         print("Starting unlock sequence...")
         
         self.rotate_to_angle(0)
-        time.sleep(0.05)
-        self.rotate_to_angle(60)
-        time.sleep(0.05)
+        time.sleep(0.2)
+        self.rotate_to_angle(53)
+        time.sleep(0.2)
         self.rotate_to_angle(0)
         
         print("Unlock sequence completed")
