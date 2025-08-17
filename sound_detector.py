@@ -102,7 +102,6 @@ class SoundDetector:
                     amplitude >= threshold_amplitude):
                     continue
 
-                print(detected_freq)
 
                 # Add detection time
                 self.frequency_detection_times[target_freq].append(current_time)
@@ -116,12 +115,16 @@ class SoundDetector:
                 
                 # Check if we have sustained detection
                 detection_count = len(self.frequency_detection_times[target_freq])
-                # min_detections = max(1, int(self.detection_duration * self.sample_rate / self.chunk_size))
-                # print(min_detections, detection_count, target_freq)
+                min_detections = max(1, int(self.detection_duration * self.sample_rate / self.chunk_size))
+                print(f"min_detections: {int(self.detection_duration * self.sample_rate / self.chunk_size)}, {self.detection_duration}, {self.chunk_size}")
+                print(target_freq, detection_count) 
                 
-                if detection_count >= 3:
+                if detection_count >= min_detections:
                     detected_targets.append(target_freq)
                     break
+
+        if len(detected_targets) > 0:
+            print(detected_targets)
                     
         return detected_targets
     
