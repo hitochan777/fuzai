@@ -49,7 +49,6 @@ class SoundDetector:
         self.current_state = DetectionState.WAITING
         self.state_transition_time = time.time()
         self.current_frequency_index = 0  # Index of the frequency we're currently waiting for
-        self.detected_frequencies = []  # Track which frequencies have been detected in sequence
         
     def set_detection_callback(self, callback: Callable[[], None]):
         """Set callback function to be called with detection result (True/False)"""
@@ -88,7 +87,7 @@ class SoundDetector:
         
         # Normalize amplitude threshold
         if not dominant_freqs:
-            return []
+            return False
 
         max_amplitude = max(freq[1] for freq in dominant_freqs)
         threshold_amplitude = max_amplitude * self.detection_threshold
@@ -96,34 +95,34 @@ class SoundDetector:
         detected_targets = []
 
         if self.current_frequency_index >= len(self.target_frequencies):
-            return []
+            return False
 
         target_freq = self.target_frequencies[self.current_frequency_index]
+        freq_kind_count = 3
         # Check if any dominant frequency matches this target
-        detected_freqs = [detected_freq for detected_freq, amplitude in dominant_freqs if all(self.frequency_analyzer.is_frequency_match( detected_freq, target_freq *(i+1)) for i in range(3)) and amplitude >= threshold_amplitude]
-        for detected_freq in detected_freqs:
-            # Add detection time
-            self.frequency_detection_times[target_freq].append(current_time)
-            
-            # Remove old detections (outside duration window)
-            cutoff_time = current_time - self.detection_duration
-            self.frequency_detection_times[target_freq] = [
-                t for t in self.frequency_detection_times[target_freq] 
-                if t >= cutoff_time
-            ]
-            
-            # Check if we have sustained detection
-            detection_count = len(self.frequency_detection_times[target_freq])
-            min_detections = max(1, int(self.detection_duration * self.sample_rate / self.chunk_size))
-            
-            if detection_count >= min_detections:
-                detected_targets.append(target_freq)
-                break
+        detected_freqs = set(target_freq * (i + 1) for detected_freq, amplitude in dominant_freqs for i in range(freq_kind_count) if self.frequency_analyzer.is_frequency_match(detected_freq, target_freq * (i+1)) and amplitude >= threshold_amplitude)
+        if len(detected_freqs) != freq_kind_count:
+            print(detected_freqs)
+            return False 
 
-        if len(detected_targets) > 0:
-            print(detected_targets)
-                    
-        return detected_targets
+        # Add detection time
+        self.frequency_detection_times[target_freq].append(current_time)
+        
+        # Remove old detections (outside duration window)
+        cutoff_time = current_time - self.detection_duration
+        self.frequency_detection_times[target_freq] = [
+            t for t in self.frequency_detection_times[target_freq] 
+            if t >= cutoff_time
+        ]
+        
+        # Check if we have sustained detection
+        detection_count = len(self.frequency_detection_times[target_freq])
+        min_detections = max(1, int(self.detection_duration * self.sample_rate / self.chunk_size))
+        
+        if detection_count >= min_detections:
+            return True
+
+        return False
     
     def _update_state_machine(self, audio_data: np.ndarray):
         """Update state machine based on detected frequencies"""
@@ -131,7 +130,7 @@ class SoundDetector:
             return
             
         current_time = time.time()
-        detected_freqs = self._detect_target_frequencies(audio_data)
+        detected = self._detect_target_frequencies(audio_data)
         
         # Check for timeout
         if (self.current_state == DetectionState.WAITING and 
@@ -150,9 +149,7 @@ class SoundDetector:
             
             expected_freq = self.target_frequencies[self.current_frequency_index]
             
-            # Check if we detected the expected frequency
-            if expected_freq in detected_freqs:
-                self.detected_frequencies.append(expected_freq)
+            if detected:
                 self.current_frequency_index += 1
                 self.frequency_detection_times = defaultdict(list)
                 self.state_transition_time = current_time
@@ -168,7 +165,6 @@ class SoundDetector:
         self.current_state = DetectionState.WAITING
         self.current_frequency_index = 0
         self.frequency_detection_times = defaultdict(list)
-        self.detected_frequencies = []
         self.state_transition_time = time.time()
         print("State: Reset to WAITING")
     
