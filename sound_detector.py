@@ -94,34 +94,31 @@ class SoundDetector:
         threshold_amplitude = max_amplitude * self.detection_threshold
             
         detected_targets = []
-        for target_freq in self.target_frequencies:
-            # Check if any dominant frequency matches this target
-            for detected_freq, amplitude in dominant_freqs:
-                if not (any(self.frequency_analyzer.is_frequency_match(
-                    detected_freq, target_freq *(i+1)) for i in range(3)) and 
-                    amplitude >= threshold_amplitude):
-                    continue
 
+        if self.current_frequency_index >= len(self.target_frequencies):
+            return []
 
-                # Add detection time
-                self.frequency_detection_times[target_freq].append(current_time)
-                
-                # Remove old detections (outside duration window)
-                cutoff_time = current_time - self.detection_duration
-                self.frequency_detection_times[target_freq] = [
-                    t for t in self.frequency_detection_times[target_freq] 
-                    if t >= cutoff_time
-                ]
-                
-                # Check if we have sustained detection
-                detection_count = len(self.frequency_detection_times[target_freq])
-                min_detections = max(1, int(self.detection_duration * self.sample_rate / self.chunk_size))
-                print(f"min_detections: {int(self.detection_duration * self.sample_rate / self.chunk_size)}, {self.detection_duration}, {self.chunk_size}")
-                print(target_freq, detection_count) 
-                
-                if detection_count >= min_detections:
-                    detected_targets.append(target_freq)
-                    break
+        target_freq = self.target_frequencies[self.current_frequency_index]
+        # Check if any dominant frequency matches this target
+        detected_freqs = [detected_freq for detected_freq, amplitude in dominant_freqs if all(self.frequency_analyzer.is_frequency_match( detected_freq, target_freq *(i+1)) for i in range(3)) and amplitude >= threshold_amplitude]
+        for detected_freq in detected_freqs:
+            # Add detection time
+            self.frequency_detection_times[target_freq].append(current_time)
+            
+            # Remove old detections (outside duration window)
+            cutoff_time = current_time - self.detection_duration
+            self.frequency_detection_times[target_freq] = [
+                t for t in self.frequency_detection_times[target_freq] 
+                if t >= cutoff_time
+            ]
+            
+            # Check if we have sustained detection
+            detection_count = len(self.frequency_detection_times[target_freq])
+            min_detections = max(1, int(self.detection_duration * self.sample_rate / self.chunk_size))
+            
+            if detection_count >= min_detections:
+                detected_targets.append(target_freq)
+                break
 
         if len(detected_targets) > 0:
             print(detected_targets)
@@ -157,6 +154,7 @@ class SoundDetector:
             if expected_freq in detected_freqs:
                 self.detected_frequencies.append(expected_freq)
                 self.current_frequency_index += 1
+                self.frequency_detection_times = defaultdict(list)
                 self.state_transition_time = current_time
                 print(f"State: Detected frequency {self.current_frequency_index}/{len(self.target_frequencies)}: {expected_freq}Hz")
                 
@@ -169,6 +167,7 @@ class SoundDetector:
         """Reset state machine to initial state"""
         self.current_state = DetectionState.WAITING
         self.current_frequency_index = 0
+        self.frequency_detection_times = defaultdict(list)
         self.detected_frequencies = []
         self.state_transition_time = time.time()
         print("State: Reset to WAITING")

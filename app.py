@@ -25,19 +25,19 @@ def initialize_services(app, servo_controller):
         print("Detected target frequencies!")
         otp = otp_manager.generate_otp()
         url = API_ENDPOINT + f"/unlock?otp={otp}"
-        result = line.broadcast_message([
-          {
-            "type": "text",
-            "text": f"Intercom rang just now: {url}"
-          }
-        ])
-        if not result["success"]:
-            print(f"Failed to notify via email: {result}")
+        # result = line.broadcast_message([
+        #   {
+        #     "type": "text",
+        #     "text": f"Intercom rang just now: {url}"
+        #   }
+        # ])
+        # if not result["success"]:
+        #     print(f"Failed to notify via email: {result}")
 
     # Create detector with common musical frequencies
     detector = SoundDetector(
         target_frequencies=[585,743,880],
-        detection_threshold=0.9,
+        detection_threshold=0.5,
         detection_duration=0.2,
     )
     detector.set_detection_callback(on_detection)
