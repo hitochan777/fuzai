@@ -12,6 +12,8 @@ dependencies = [
     "rpi",
     "resend>=2.11.0",
     # "rpi-gpio>=0.7.1",
+    "dtaidistance>=2.3.13",
+    "librosa>=0.11.0",
 ]
 
 [tool.uv.sources]
