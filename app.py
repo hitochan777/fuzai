@@ -25,21 +25,22 @@ def initialize_services(app, servo_controller):
         print("Detected target frequencies!")
         otp = otp_manager.generate_otp()
         url = API_ENDPOINT + f"/unlock?otp={otp}"
-        result = line.broadcast_message([
-          {
-            "type": "text",
-            "text": f"Intercom rang just now: {url}"
-          }
-        ])
-        if not result["success"]:
-            print(f"Failed to notify via email: {result}")
+        # result = line.broadcast_message([
+        #   {
+        #     "type": "text",
+        #     "text": f"Intercom rang just now: {url}"
+        #   }
+        # ])
+        # if not result["success"]:
+        #     print(f"Failed to notify via email: {result}")
 
-    # Create detector with common musical frequencies
+    # Create DTW-based detector with reference audio file
+    # Note: You need to provide a path to your reference intercom sound file
+    reference_audio_path = os.environ.get("REFERENCE_AUDIO_PATH", "reference_intercom.wav")
     detector = SoundDetector(
-        # target_frequencies=[502, 648],
-        target_frequencies=[660, 521],
-        detection_threshold=0.1,
-        detection_duration=3.0,
+        reference_audio_path=reference_audio_path,
+        similarity_threshold=0.8,  # Higher threshold since 0=match, 1=no match
+        detection_duration=0.2,
     )
     detector.set_detection_callback(on_detection)
     
@@ -49,8 +50,9 @@ def initialize_services(app, servo_controller):
         chunk_size=detector.chunk_size
     )
     
-    print("Starting frequency detection...")
-    print(f"Target frequencies: {detector.target_frequencies}")
+    print("Starting DTW pattern detection...")
+    print(f"Reference audio: {reference_audio_path}")
+    print(f"Similarity threshold: {detector.similarity_threshold}")
     
     print("Press Ctrl+C to stop")
     audio_capture.start_capture(detector.process_audio_chunk)
