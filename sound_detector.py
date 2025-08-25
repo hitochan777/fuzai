@@ -82,7 +82,6 @@ class SoundDetector:
             return False
             
         similarity = self.dtw_analyzer.calculate_similarity(audio_buffer)
-        print(f"Calculated similarity: {similarity}")
         if similarity <= self.similarity_threshold:
             return True
         

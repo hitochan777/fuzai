@@ -25,17 +25,16 @@ def initialize_services(app, servo_controller):
         print("Detected target frequencies!")
         otp = otp_manager.generate_otp()
         url = API_ENDPOINT + f"/unlock?otp={otp}"
-        # result = line.broadcast_message([
-        #   {
-        #     "type": "text",
-        #     "text": f"Intercom rang just now: {url}"
-        #   }
-        # ])
-        # if not result["success"]:
-        #     print(f"Failed to notify via email: {result}")
+        result = line.broadcast_message([
+          {
+            "type": "text",
+            "text": f"Intercom rang just now: {url}"
+          }
+        ])
+        if not result["success"]:
+            print(f"Failed to notify via email: {result}")
 
     # Create DTW-based detector with reference audio file
-    # Note: You need to provide a path to your reference intercom sound file
     reference_audio_path = os.environ.get("REFERENCE_AUDIO_PATH", "reference_intercom.wav")
     detector = SoundDetector(
         reference_audio_path=reference_audio_path,
