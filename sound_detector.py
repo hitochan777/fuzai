@@ -1,6 +1,7 @@
 import time
 import numpy as np
 import librosa
+import os
 from typing import Callable
 from collections import deque
 from dtw_analyzer import DTWAnalyzer
@@ -13,7 +14,7 @@ class SoundDetector:
                  chunk_size: int = 4096,
                  similarity_threshold: float = 0.8,
                  detection_duration: float = 0.1,
-                 throttle_duration: float = 10.0
+                 throttle_duration: float = 10.0,
         ):
         """
         Initialize DTW-based sound detector for microphone input
@@ -52,12 +53,26 @@ class SoundDetector:
         
     def process_audio_chunk(self, audio_data: np.ndarray):
         """Process incoming audio chunk and return detection result"""
+        start_time = time.time()
+        
         if not self.detection_callback:
             return
         
         # Add new audio data to buffer
+        buffer_start = time.time()
         self.audio_buffer.extend(audio_data)
-        if not self._detect_pattern_similarity(np.array(list(self.audio_buffer))):
+        buffer_time = time.time() - buffer_start
+        
+        # Pattern detection timing
+        detection_start = time.time()
+        detected = self._detect_pattern_similarity(np.array(list(self.audio_buffer)))
+        detection_time = time.time() - detection_start
+        
+        total_time = time.time() - start_time
+        if os.getenv('DEBUG', '').lower() == 'true':
+            print(f"Audio processing: buffer={buffer_time*1000:.1f}ms, detection={detection_time*1000:.1f}ms, total={total_time*1000:.1f}ms")
+        
+        if not detected:
             return
 
         current_time = time.time()

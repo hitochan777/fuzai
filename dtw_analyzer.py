@@ -142,9 +142,20 @@ class DTWAnalyzer:
         Returns:
             similarity_score: Float between 0 and 1 (0 = perfect match, 1 = no similarity)
         """
+        import time
+        
         # Extract features from input audio pattern
+        feature_start = time.time()
         pattern_features = self.extract_features(audio_pattern)
+        feature_time = time.time() - feature_start
         
         # Compare with stored reference features
-        return self.calculate_similarity_features(pattern_features, self.reference_features)
+        dtw_start = time.time()
+        similarity = self.calculate_similarity_features(pattern_features, self.reference_features)
+        dtw_time = time.time() - dtw_start
+        
+        if os.getenv('DEBUG', '').lower() == 'true':
+            print(f"  DTW breakdown: features={feature_time*1000:.1f}ms, dtw_calc={dtw_time*1000:.1f}ms")
+        
+        return similarity
     
