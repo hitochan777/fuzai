@@ -42,6 +42,8 @@ class SoundDetector:
         self.detection_callback = None
         self.pattern_detection_times = []
         self.last_detection_time = 0
+        self.chunk_counter = 0
+        self.processing_interval = int(os.getenv('PROCESSING_INTERVAL', '2'))  # Process every N chunks
         
         # Audio buffer to store latest n seconds of audio data
         self.buffer_size = int(self.reference_duration * sample_rate)
@@ -58,10 +60,17 @@ class SoundDetector:
         if not self.detection_callback:
             return
         
-        # Add new audio data to buffer
+        # Add new audio data to buffer (always)
         buffer_start = time.time()
         self.audio_buffer.extend(audio_data)
         buffer_time = time.time() - buffer_start
+        
+        # Skip processing some chunks to reduce CPU load
+        self.chunk_counter = (self.chunk_counter + 1) % self.processing_interval
+        if self.chunk_counter != 0:
+            if os.getenv('DEBUG', '').lower() == 'true':
+                print(f"Skipping chunk {self.chunk_counter} (interval={self.processing_interval})")
+            return
         
         # Pattern detection timing
         detection_start = time.time()
