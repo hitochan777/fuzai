@@ -12,7 +12,6 @@ dependencies = [
     "flask>=3.0.0",
     "resend>=2.11.0",
     "rpi-gpio>=0.7.1",
-    "dtaidistance>=2.3.13",
     "scikit-learn==1.6.0",
     "librosa==0.10.2",
     "numba==0.60.0",
