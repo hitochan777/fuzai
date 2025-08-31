@@ -10,7 +10,7 @@ from dtw_analyzer import DTWAnalyzer
 class SoundDetector:
     def __init__(self, 
                  reference_audio_path: str,
-                 sample_rate: int = 44100,
+                 sample_rate: int = 8000,
                  chunk_size: int = 4096,
                  similarity_threshold: float = 0.8,
                  detection_duration: float = 0.1,
