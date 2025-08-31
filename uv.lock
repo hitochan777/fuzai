@@ -103,20 +103,6 @@ wheels = [
 ]
 
 [[package]]
-name = "dtaidistance"
-version = "2.3.13"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/32/0d/04de7998fba3b4881bf9abb4abe4a5422a53050670000ea7f03abaf9d7ed/dtaidistance-2.3.13.tar.gz", hash = "sha256:b0344a9b6f642863fcedacf5de86c4a0a0d4b4adec9b9be561a6f513ecf5e695", size = 985784, upload-time = "2025-02-17T16:31:13.858Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/10/c0/e690152c04207972cd6686553099ed7c81e5a658122e81787e6be8de8c2a/dtaidistance-2.3.13-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:02f2de97f147cd17c7de1b19140d3a5f48d876c19ae28105c12cca45f9af2520", size = 1515808, upload-time = "2025-02-17T16:30:59.543Z" },
-    { url = "https://files.pythonhosted.org/packages/50/bd/18e647e214865cfc37d95d3bd414240e83be31c3ad7354ea72949452cbfb/dtaidistance-2.3.13-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c61ef66588cac8b1f2ec7c8a7ca15bc6ae058804f8e5514919a0b682818fa60a", size = 3004747, upload-time = "2025-02-17T16:31:02.252Z" },
-    { url = "https://files.pythonhosted.org/packages/81/c9/a1964a5aa966e20220a316c715d5b5ee55a874424336f7e992db76148c4d/dtaidistance-2.3.13-cp311-cp311-win_amd64.whl", hash = "sha256:ac8536147977419a2ab5b4a89d97d91bbaf8ea339d91bbb63e26bea0a842ec5e", size = 1036790, upload-time = "2025-02-17T16:31:04.91Z" },
-]
-
-[[package]]
 name = "flask"
 version = "3.1.2"
 source = { registry = "https://pypi.org/simple" }
@@ -421,7 +407,6 @@ name = "sound-detect"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "dtaidistance" },
     { name = "flask" },
     { name = "librosa" },
     { name = "numba" },
@@ -435,7 +420,6 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "dtaidistance", specifier = ">=2.3.13" },
     { name = "flask", specifier = ">=3.0.0" },
     { name = "librosa", specifier = "==0.10.2" },
     { name = "numba", specifier = "==0.60.0" },

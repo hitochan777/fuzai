@@ -1,10 +1,8 @@
 import numpy as np
 import librosa
-from dtaidistance import dtw
 from typing import Optional, Tuple
 import os
 from scipy.spatial.distance import euclidean
-
 
 class DTWAnalyzer:
     def __init__(self, reference_audio: np.ndarray, sample_rate: int = 44100, 
@@ -112,7 +110,6 @@ class DTWAnalyzer:
         # Calculate DTW distance between the two feature sequences
         try:
             # Use optimized DTW with window constraint
-            
             distance = self._dtw_distance_optimized(
                 seq1_features,
                 seq2_features,
