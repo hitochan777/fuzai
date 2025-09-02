@@ -5,13 +5,14 @@ import os
 from typing import Callable
 from collections import deque
 from dtw_analyzer import DTWAnalyzer
+from datetime import datetime
 
 
 class SoundDetector:
     def __init__(self, 
                  reference_audio_path: str,
-                 sample_rate: int = 8000,
-                 chunk_size: int = 4096,
+                 sample_rate: int = 8192,
+                 chunk_size: int = 4098,
                  similarity_threshold: float = 0.8,
                  detection_duration: float = 0.1,
                  throttle_duration: float = 10.0,
@@ -89,7 +90,7 @@ class SoundDetector:
             self.last_detection_time = current_time
             self.detection_callback()
         else:
-            print("Detected by throttled")
+            print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "Detected by throttled")
             
     
     def _detect_pattern_similarity(self, audio_buffer: np.ndarray) -> bool:
@@ -106,6 +107,7 @@ class SoundDetector:
             return False
             
         similarity = self.dtw_analyzer.calculate_similarity(audio_buffer)
+        print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "similarity", similarity)
         if similarity <= self.similarity_threshold:
             return True
         

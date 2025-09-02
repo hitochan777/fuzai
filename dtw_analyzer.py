@@ -6,20 +6,17 @@ from scipy.spatial.distance import euclidean
 
 class DTWAnalyzer:
     def __init__(self, reference_audio: np.ndarray, sample_rate: int = 44100, 
-                 window_size: float = 1.0,
-                 window_constraint_ratio: float = 0.1, downsample_factor: int = 2):
+                 window_constraint_ratio: float = 1, downsample_factor: int = 1):
         """
         Initialize DTW analyzer for audio pattern matching
         
         Args:
             reference_audio: Reference audio pattern as numpy array
             sample_rate: Audio sample rate in Hz
-            window_size: Size of the sliding window in seconds for comparison
             window_constraint_ratio: Sakoe-Chiba window constraint as ratio of sequence length
             downsample_factor: Factor to downsample features for faster processing
         """
         self.sample_rate = sample_rate
-        self.window_size = window_size
         self.window_constraint_ratio = window_constraint_ratio
         self.downsample_factor = downsample_factor
         
