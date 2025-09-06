@@ -82,31 +82,6 @@ class AudioCapture:
             self.stream.close()
             self.stream = None
             
-    def capture_for_duration(self, duration: float) -> Optional[np.ndarray]:
-        """
-        Capture audio for a specific duration
-        
-        Args:
-            duration: Duration in seconds to capture
-            
-        Returns:
-            Combined audio data or None if not capturing
-        """
-        if not self.is_capturing:
-            return None
-            
-        samples_needed = int(duration * self.sample_rate)
-        chunks_needed = (samples_needed + self.chunk_size - 1) // self.chunk_size
-        
-        audio_buffer = []
-        for _ in range(chunks_needed):
-            audio_data = self._read_audio_chunk()
-            if audio_data is None:
-                return None
-            audio_buffer.extend(audio_data)
-            
-        return np.array(audio_buffer[:samples_needed])
-            
     def __del__(self):
         """Cleanup on destruction"""
         self.stop_capture()
