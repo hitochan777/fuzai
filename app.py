@@ -38,7 +38,7 @@ def initialize_services(app, servo_controller):
     reference_audio_path = os.environ.get("REFERENCE_AUDIO_PATH", "reference_intercom.wav")
     detector = SoundDetector(
         reference_audio_path=reference_audio_path,
-        similarity_threshold=0.70,  # Higher threshold since 0=match, 1=no match
+        similarity_threshold=0.82,  # Higher threshold since 0=match, 1=no match
         detection_duration=0.2,
     )
     detector.set_detection_callback(on_detection)
