@@ -46,8 +46,8 @@ class SoundDetector:
         self.chunk_counter = 0
         self.processing_interval = int(os.getenv('PROCESSING_INTERVAL', '2'))  # Process every N chunks
         
-        # Audio buffer to store latest n seconds of audio data
-        self.buffer_size = int(self.reference_duration * sample_rate)
+        # Audio buffer to store latest n seconds of audio data (+1 second because beginning of buffer does not necessarily matches perfectly with the beginning of reference sound)
+        self.buffer_size = int((self.reference_duration + 1) * sample_rate)
         self.audio_buffer = deque(maxlen=self.buffer_size)
         
     def set_detection_callback(self, callback: Callable[[], None]):
