@@ -3,6 +3,7 @@ import numpy as np
 import time
 import os
 from unittest.mock import MagicMock, patch
+from datetime import datetime
 from sound_detector import SoundDetector
 
 
@@ -169,6 +170,140 @@ class TestSoundDetector(unittest.TestCase):
         
         # Callback should not be called
         callback.assert_not_called()
+        
+    def test_time_pause_initialization(self):
+        """Test SoundDetector initialization with time-based pause parameters."""
+        detector = SoundDetector(
+            reference_audio_path=self.reference_audio_path,
+            enable_time_pause=True,
+            pause_start_hour=22,
+            pause_end_hour=8
+        )
+        
+        self.assertTrue(detector.enable_time_pause)
+        self.assertEqual(detector.pause_start_hour, 22)
+        self.assertEqual(detector.pause_end_hour, 8)
+        
+    def test_time_pause_disabled_by_default(self):
+        """Test that time-based pause can be disabled."""
+        detector = SoundDetector(
+            reference_audio_path=self.reference_audio_path,
+            enable_time_pause=False
+        )
+        
+        self.assertFalse(detector.enable_time_pause)
+        
+    def test_is_in_pause_window_disabled(self):
+        """Test _is_in_pause_window returns False when time pause is disabled."""
+        detector = SoundDetector(
+            reference_audio_path=self.reference_audio_path,
+            enable_time_pause=False
+        )
+        
+        # Should return False regardless of time when disabled
+        result = detector._is_in_pause_window()
+        self.assertFalse(result)
+        
+    def test_is_in_pause_window_midnight_spanning(self):
+        """Test _is_in_pause_window correctly handles pause window spanning midnight."""
+        detector = SoundDetector(
+            reference_audio_path=self.reference_audio_path,
+            enable_time_pause=True,
+            pause_start_hour=22,  # 10 PM
+            pause_end_hour=8     # 8 AM
+        )
+        
+        # Test various hours
+        test_cases = [
+            (23, True),   # 11 PM - should be paused
+            (0, True),    # Midnight - should be paused
+            (3, True),    # 3 AM - should be paused
+            (7, True),    # 7 AM - should be paused
+            (8, False),   # 8 AM - should not be paused
+            (12, False),  # Noon - should not be paused
+            (21, False),  # 9 PM - should not be paused
+            (22, True),   # 10 PM - should be paused
+        ]
+        
+        for hour, expected_paused in test_cases:
+            with patch.object(datetime, 'now') as mock_now:
+                mock_now.return_value.hour = hour
+                result = detector._is_in_pause_window()
+                self.assertEqual(result, expected_paused, 
+                               f"Hour {hour} should {'be paused' if expected_paused else 'not be paused'}")
+                
+    def test_is_in_pause_window_same_day(self):
+        """Test _is_in_pause_window for pause window within same day."""
+        detector = SoundDetector(
+            reference_audio_path=self.reference_audio_path,
+            enable_time_pause=True,
+            pause_start_hour=14,  # 2 PM
+            pause_end_hour=18    # 6 PM
+        )
+        
+        test_cases = [
+            (13, False),  # 1 PM - should not be paused
+            (14, True),   # 2 PM - should be paused
+            (16, True),   # 4 PM - should be paused
+            (17, True),   # 5 PM - should be paused
+            (18, False),  # 6 PM - should not be paused
+            (19, False),  # 7 PM - should not be paused
+        ]
+        
+        for hour, expected_paused in test_cases:
+            with patch.object(datetime, 'now') as mock_now:
+                mock_now.return_value.hour = hour
+                result = detector._is_in_pause_window()
+                self.assertEqual(result, expected_paused,
+                               f"Hour {hour} should {'be paused' if expected_paused else 'not be paused'}")
+                
+    def test_process_audio_chunk_paused_by_time(self):
+        """Test that process_audio_chunk skips processing during pause window."""
+        detector = SoundDetector(
+            reference_audio_path=self.reference_audio_path,
+            enable_time_pause=True,
+            pause_start_hour=22,
+            pause_end_hour=8
+        )
+        callback = MagicMock()
+        detector.set_detection_callback(callback)
+        
+        # Mock current time to be in pause window (e.g., 2 AM)
+        with patch.object(datetime, 'now') as mock_now:
+            mock_now.return_value.hour = 2
+            
+            # Mock pattern detection to return True (should be ignored due to pause)
+            with patch.object(detector, '_detect_pattern_similarity', return_value=True):
+                audio_data = np.random.random(1024).astype(np.float32)
+                detector.process_audio_chunk(audio_data)
+                
+                # Callback should not be called due to time-based pause
+                callback.assert_not_called()
+                
+    def test_process_audio_chunk_not_paused_by_time(self):
+        """Test that process_audio_chunk works normally outside pause window."""
+        detector = SoundDetector(
+            reference_audio_path=self.reference_audio_path,
+            enable_time_pause=True,
+            pause_start_hour=22,
+            pause_end_hour=8,
+            throttle_duration=0.1
+        )
+        callback = MagicMock()
+        detector.set_detection_callback(callback)
+        detector.last_detection_time = 0  # Avoid throttling
+        
+        # Mock current time to be outside pause window (e.g., 10 AM)
+        with patch.object(datetime, 'now') as mock_now:
+            mock_now.return_value.hour = 10
+            
+            # Mock pattern detection to return True
+            with patch.object(detector, '_detect_pattern_similarity', return_value=True):
+                audio_data = np.random.random(1024).astype(np.float32)
+                detector.process_audio_chunk(audio_data)
+                
+                # Callback should be called since we're outside pause window
+                callback.assert_called_once()
 
 
 if __name__ == '__main__':
