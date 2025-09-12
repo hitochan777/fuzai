@@ -58,6 +58,10 @@ class ServoController:
         time.sleep(0.2)
         self.rotate_to_angle(0)
         
+        # Wait for servo to settle then stop PWM to prevent trembling
+        time.sleep(0.5)
+        self.servo.ChangeDutyCycle(0)
+        
         print("Unlock sequence completed")
     
     def calibration_mode(self):
