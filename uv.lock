@@ -1,6 +1,6 @@
 version = 1
 revision = 2
-requires-python = "==3.11.2"
+requires-python = "==3.11.*"
 
 [[package]]
 name = "audioread"
@@ -358,6 +358,11 @@ wheels = [
 ]
 
 [[package]]
+name = "rpi"
+version = "0.3.1"
+source = { git = "https://github.com/nosix/raspberry-gpio-emulator#891462c30064141bca3e5d7aa7f4c46cca99a7eb" }
+
+[[package]]
 name = "rpi-gpio"
 version = "0.7.1"
 source = { registry = "https://pypi.org/simple" }
@@ -414,7 +419,8 @@ dependencies = [
     { name = "pyaudio" },
     { name = "requests" },
     { name = "resend" },
-    { name = "rpi-gpio" },
+    { name = "rpi", marker = "platform_machine != 'aarch64' and platform_machine != 'armv7l'" },
+    { name = "rpi-gpio", marker = "platform_machine == 'aarch64' or platform_machine == 'armv7l'" },
     { name = "scikit-learn" },
 ]
 
@@ -427,7 +433,8 @@ requires-dist = [
     { name = "pyaudio", specifier = ">=0.2.14" },
     { name = "requests", specifier = ">=2.32.4" },
     { name = "resend", specifier = ">=2.11.0" },
-    { name = "rpi-gpio", specifier = ">=0.7.1" },
+    { name = "rpi", marker = "platform_machine != 'aarch64' and platform_machine != 'armv7l'", git = "https://github.com/nosix/raspberry-gpio-emulator" },
+    { name = "rpi-gpio", marker = "platform_machine == 'aarch64' or platform_machine == 'armv7l'", specifier = ">=0.7.1" },
     { name = "scikit-learn", specifier = "==1.6.0" },
 ]
 

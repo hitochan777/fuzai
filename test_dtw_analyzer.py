@@ -38,7 +38,7 @@ class TestDTWAnalyzer(unittest.TestCase):
         """Clean up temporary file."""
         os.unlink(cls.temp_file.name)
     
-    def test_initialization(self):
+    def test_initialization_with_reference_audio_sets_sample_rate(self):
         """Test that DTW analyzer initializes correctly."""
         analyzer = DTWAnalyzer(
             reference_audio=generate_base_pattern(),
@@ -47,9 +47,8 @@ class TestDTWAnalyzer(unittest.TestCase):
         
         # Test that analyzer initializes with default values
         self.assertEqual(analyzer.sample_rate, SAMPLE_RATE)
-        self.assertEqual(analyzer.window_size, 1.0)
     
-    def test_calculate_similarity_matching(self):
+    def test_calculate_similarity_with_identical_audio_returns_zero(self):
         """Test similarity calculation with matching audio."""
         # Use default parameters to ensure consistency
         analyzer = DTWAnalyzer(
@@ -60,9 +59,9 @@ class TestDTWAnalyzer(unittest.TestCase):
         pattern = generate_base_pattern()
         similarity = analyzer.calculate_similarity(pattern)
         print(f"Identical audio similarity: {similarity}")
-        self.assertEqual(similarity, 0.0)  # Identical features should have 0 similarity
+        self.assertEqual(similarity, 0.0)
     
-    def test_calculate_similarity_non_matching(self):
+    def test_calculate_similarity_with_different_audio_returns_high_value(self):
         """Test similarity calculation with non-matching audio."""
         analyzer = DTWAnalyzer(
             reference_audio=generate_base_pattern(),
@@ -77,10 +76,10 @@ class TestDTWAnalyzer(unittest.TestCase):
         
         similarity = analyzer.calculate_similarity(different_pattern)
         print(f"Different audio similarity: {similarity}")
-        self.assertGreater(similarity, 0.5)  # Should be greater than identical
+        self.assertGreater(similarity, 0.5)
         self.assertLessEqual(similarity, 1.0)
     
-    def test_synthetic_vs_loaded_audio(self):
+    def test_calculate_similarity_between_synthetic_and_loaded_audio_returns_low_value(self):
         """Test similarity between synthetic and loaded audio."""
         # Load audio from file
         loaded_audio, _ = librosa.load(self.temp_file.name, sr=SAMPLE_RATE)

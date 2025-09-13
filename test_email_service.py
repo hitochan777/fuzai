@@ -14,7 +14,7 @@ class TestEmailNotificationService(unittest.TestCase):
     
     
     @patch('email_service.resend.Emails.send')
-    def test_broadcast_message_success(self, mock_send):
+    def test_broadcast_message_with_valid_messages_sends_email_successfully(self, mock_send):
         """Test successful broadcast message sending"""
         mock_send.return_value = {"id": "email_123"}
         
@@ -36,7 +36,7 @@ class TestEmailNotificationService(unittest.TestCase):
             "text": "Test message 1\nTest message 2"
         })
     
-    def test_broadcast_message_empty_messages(self):
+    def test_broadcast_message_with_empty_messages_returns_error(self):
         """Test broadcast message with empty messages list"""
         messages = []
         
@@ -46,7 +46,7 @@ class TestEmailNotificationService(unittest.TestCase):
         self.assertIn("No text content found", result["error"])
     
     @patch('email_service.resend.Emails.send')
-    def test_broadcast_message_resend_error(self, mock_send):
+    def test_broadcast_message_with_resend_api_error_returns_error(self, mock_send):
         """Test broadcast message with Resend error"""
         mock_send.side_effect = Exception("Resend API error")
         
@@ -57,7 +57,7 @@ class TestEmailNotificationService(unittest.TestCase):
         self.assertFalse(result["success"])
         self.assertIn("Resend API error", result["error"])
     
-    def test_create_email_service_factory(self):
+    def test_create_email_service_with_parameters_returns_configured_instance(self):
         """Test factory function creates EmailNotificationService correctly"""
         service = create_email_service(
             api_key="re_test_key",
