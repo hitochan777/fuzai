@@ -83,6 +83,22 @@ uv run python test_sound_detector.py
 uv run python test_email_service.py
 ```
 
+## Time-based Pause Feature
+
+The system includes a time-based pause feature that automatically disables sound detection during specified hours (e.g., nighttime). This prevents unwanted notifications during sleep hours.
+
+### Default Configuration
+
+By default, the pause feature is enabled with these settings:
+- **Pause period**: 10:00 PM to 8:00 AM
+- **Status**: Enabled
+
+During the pause window, the system will not trigger any notifications
+
+### Customizing Pause Settings
+
+You can customize the pause behavior when initializing the SoundDetector in `app.py`:
+
 ## Changing notification method
 
 To switch from LINE to email notifications:

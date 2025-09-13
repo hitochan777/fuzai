@@ -1,4 +1,8 @@
-import RPi.GPIO as GPIO
+try:
+    import RPi.GPIO as GPIO
+except ImportError:
+    # Use emulator on non-Raspberry Pi platforms
+    from RPi import GPIO
 import time
 
 class ServoController:
