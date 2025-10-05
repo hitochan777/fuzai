@@ -3,6 +3,7 @@ from servo_controller import ServoController
 from otp_manager import OTPManager
 from line_service import create_line_service
 # from email_service import create_email_service
+from slack_service import create_slack_service
 from sound_detector import SoundDetector
 from audio_capture import AudioCapture
 import os
@@ -20,19 +21,36 @@ def initialize_services(app, servo_controller):
     #     from_email=os.environ["FROM_EMAIL"],
     #     to_emails=os.environ["TO_EMAILS"].split(",")
     # )
+
+    # Optional Slack service (only create if webhook URL is provided)
+    slack_service = None
+    if "SLACK_WEBHOOK_URL" in os.environ:
+        slack_service = create_slack_service(
+            webhook_url=os.environ["SLACK_WEBHOOK_URL"],
+            channel=os.environ.get("SLACK_CHANNEL"),
+            username=os.environ.get("SLACK_USERNAME", "Sound Detector Bot")
+        )
     
     def on_detection():
         print("Detected target frequencies!")
         otp = otp_manager.generate_otp()
         url = API_ENDPOINT + f"/unlock?otp={otp}"
-        result = line.broadcast_message([
-          {
+
+        message = [{
             "type": "text",
             "text": f"Intercom rang just now: {url}"
-          }
-        ])
+        }]
+
+        # Send LINE notification
+        result = line.broadcast_message(message)
         if not result["success"]:
-            print(f"Failed to notify via email: {result}")
+            print(f"Failed to notify via LINE: {result}")
+
+        # Send Slack notification if configured
+        if slack_service:
+            slack_result = slack_service.broadcast_message(message)
+            if not slack_result["success"]:
+                print(f"Failed to notify via Slack: {slack_result}")
 
     # Create DTW-based detector with reference audio file
     reference_audio_path = os.environ.get("REFERENCE_AUDIO_PATH", "reference_intercom.wav")
