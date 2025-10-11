@@ -8,7 +8,6 @@ from image_capturer import ImageCapturer
 from sound_detector import SoundDetector
 from audio_capture import AudioCapture
 import os
-import atexit
 import time
 import cv2
 
@@ -74,15 +73,9 @@ def capture_and_encode_image(image_capturer):
         return None
 
 
-def initialize_services(app, servo_controller):
+def initialize_services(app, servo_controller, image_capturer):
     otp_manager = OTPManager(expiry_seconds=30)
-
-    # Create notifier from environment variables
     notifier, notifier_type = create_notifier_from_env()
-
-    # Initialize image capturer
-    camera_index = int(os.environ.get("CAMERA_INDEX", "0"))
-    image_capturer = ImageCapturer(camera_index=camera_index)
 
     def on_detection():
         print("Detected target frequencies!")
@@ -118,14 +111,9 @@ def initialize_services(app, servo_controller):
     
     print("Press Ctrl+C to stop")
     audio_capture.start_capture(detector.process_audio_chunk)
-    # audio_capture.stop_capture()
 
     app.otp_manager = otp_manager
     app.servo_controller = servo_controller
-    app.image_capturer = image_capturer
-
-    # Register cleanup for camera
-    atexit.register(image_capturer.release)
 
 @app.route('/unlock', methods=['GET'])
 def unlock():
@@ -168,8 +156,9 @@ def health():
     })
 
 if __name__ == '__main__':
-    with ServoController() as servo:
-        initialize_services(app, servo)
+    camera_index = int(os.environ.get("CAMERA_INDEX", "0"))
+    with ServoController() as servo, ImageCapturer(camera_index=camera_index) as image_capturer:
+        initialize_services(app, servo, image_capturer)
         try:
             app.run(host='0.0.0.0', port=5000, debug=False)
         finally:

@@ -46,4 +46,15 @@ class ImageCapturer:
 
     def release(self):
         """Release the camera resource"""
-        self.cap.release()
+        if self.cap is not None:
+            self.cap.release()
+            self.cap = None
+
+    def __enter__(self):
+        """Context manager entry"""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - cleanup camera resource"""
+        self.release()
+        return False  # Don't suppress exceptions

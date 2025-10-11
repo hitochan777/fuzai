@@ -71,6 +71,31 @@ class TestImageCapturer(unittest.TestCase):
 
         mock_cap.release.assert_called_once()
 
+    @patch('cv2.VideoCapture')
+    def test_context_manager_releases_camera(self, mock_video_capture):
+        """Test that context manager properly releases camera on exit"""
+        mock_cap = Mock()
+        mock_video_capture.return_value = mock_cap
+
+        with ImageCapturer() as capturer:
+            self.assertIsNotNone(capturer)
+
+        mock_cap.release.assert_called_once()
+
+    @patch('cv2.VideoCapture')
+    def test_context_manager_releases_on_exception(self, mock_video_capture):
+        """Test that context manager releases camera even when exception occurs"""
+        mock_cap = Mock()
+        mock_video_capture.return_value = mock_cap
+
+        try:
+            with ImageCapturer() as capturer:
+                raise ValueError("Test exception")
+        except ValueError:
+            pass
+
+        mock_cap.release.assert_called_once()
+
 
 if __name__ == '__main__':
     unittest.main()
