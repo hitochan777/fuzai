@@ -174,3 +174,46 @@ def create_slack_service(token: str, channel: str) -> SlackMessagingService:
         SlackMessagingService instance
     """
     return SlackMessagingService(token, channel)
+
+
+if __name__ == "__main__":
+    import os
+
+    # Get Slack credentials from environment
+    token = os.environ.get("SLACK_BOT_TOKEN")
+    channel = os.environ.get("SLACK_CHANNEL")
+
+    if not token or not channel:
+        print("Error: SLACK_BOT_TOKEN and SLACK_CHANNEL environment variables must be set")
+        print("Usage: SLACK_BOT_TOKEN=xoxb-... SLACK_CHANNEL=C... python slack_service.py")
+        exit(1)
+
+    # Create service instance
+    service = SlackMessagingService(token, channel)
+
+    # Test message with image
+    test_image_path = "test_capture.jpg"
+
+    try:
+        with open(test_image_path, "rb") as f:
+            image_data = f.read()
+
+        print(f"Sending test message with image from {test_image_path}...")
+        result = service.send_notification(
+            message="Test notification with image from Slack service",
+            image_data=image_data
+        )
+
+        if result["success"]:
+            print("✓ Message sent successfully!")
+            print(f"  File ID: {result.get('file_id')}")
+            print(f"  File URL: {result.get('file_url')}")
+            print(f"  Message timestamp: {result.get('message_timestamp')}")
+        else:
+            print(f"✗ Failed to send message: {result.get('error')}")
+
+    except FileNotFoundError:
+        print(f"Error: {test_image_path} not found")
+        print("Please create a test image file or update the path")
+    except Exception as e:
+        print(f"Error: {e}")

@@ -58,3 +58,16 @@ class ImageCapturer:
         """Context manager exit - cleanup camera resource"""
         self.release()
         return False  # Don't suppress exceptions
+
+
+if __name__ == "__main__":
+    # Test the ImageCapturer
+    print("Testing ImageCapturer...")
+    print("Capturing an image and saving to 'test_capture.jpg'")
+
+    with ImageCapturer(camera_index=0) as capturer:
+        success = capturer.save_image("test_capture.jpg")
+        if success:
+            print("✓ Image captured and saved successfully!")
+        else:
+            print("✗ Failed to capture image")
