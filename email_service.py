@@ -1,8 +1,9 @@
 import resend
 from typing import Optional, Dict, Any, List, Union
+from notifier import Notifier
 
 
-class EmailNotificationService:
+class EmailNotificationService(Notifier):
     """Service class for sending email notifications via Resend SDK"""
     
     def __init__(self, api_key: str, from_email: str, to_emails: List[str]):
@@ -87,7 +88,27 @@ class EmailNotificationService:
                 "error": str(e),
                 "status_code": None
             }
-    
+
+    def send_notification(
+        self,
+        message: str,
+        image_data: Optional[bytes] = None
+    ) -> Dict[str, Any]:
+        """
+        Send notification via Email (implements Notifier interface)
+
+        Note: Email with image attachments is not currently supported.
+        The image_data parameter is ignored.
+
+        Args:
+            message: The message text to send
+            image_data: Ignored (email with attachments not implemented yet)
+
+        Returns:
+            Dict containing response data or error information
+        """
+        return self._send_email("Intercom Detection Alert", message)
+
 
 def create_email_service(api_key: str, from_email: str, to_emails: List[str]) -> EmailNotificationService:
     """

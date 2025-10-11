@@ -1,9 +1,10 @@
 import requests
 import json
 from typing import Optional, Dict, Any, List, Union
+from notifier import Notifier
 
 
-class LineMessagingService:
+class LineMessagingService(Notifier):
     """Service class for sending messages via LINE Messaging API"""
     
     def __init__(self, channel_access_token: str):
@@ -73,7 +74,32 @@ class LineMessagingService:
                 "error": str(e),
                 "status_code": None
             }
-    
+
+    def send_notification(
+        self,
+        message: str,
+        image_data: Optional[bytes] = None
+    ) -> Dict[str, Any]:
+        """
+        Send notification via LINE (implements Notifier interface)
+
+        Note: LINE doesn't support direct image upload without hosting,
+        so image_data is ignored.
+
+        Args:
+            message: The message text to send
+            image_data: Ignored (LINE requires hosted image URLs)
+
+        Returns:
+            Dict containing response data or error information
+        """
+        return self.broadcast_message([
+            {
+                "type": "text",
+                "text": message
+            }
+        ])
+
 
 def create_line_service(channel_access_token: str) -> LineMessagingService:
     """
