@@ -2,37 +2,100 @@ from flask import Flask, request, jsonify, g, render_template
 from servo_controller import ServoController
 from otp_manager import OTPManager
 from line_service import create_line_service
-# from email_service import create_email_service
+from slack_service import create_slack_service
+from email_service import create_email_service
+from image_capturer import ImageCapturer
 from sound_detector import SoundDetector
 from audio_capture import AudioCapture
 import os
 import atexit
 import time
+import cv2
 
 API_ENDPOINT = os.environ.get("BASE_URL")
 app = Flask(__name__)
 
+
+def create_notifier_from_env():
+    """
+    Factory function to create a notifier based on environment variables
+
+    Returns:
+        Tuple of (notifier, notifier_type)
+
+    Raises:
+        ValueError: If required environment variables are missing or notifier type is unsupported
+    """
+    notifier_type = os.environ.get("NOTIFIER_TYPE", "line").lower()
+
+    if notifier_type == "slack":
+        slack_token = os.environ.get("SLACK_BOT_TOKEN")
+        slack_channel = os.environ.get("SLACK_CHANNEL")
+        if not slack_token or not slack_channel:
+            raise ValueError("SLACK_BOT_TOKEN and SLACK_CHANNEL must be set when using Slack notifier")
+        return create_slack_service(slack_token, slack_channel), notifier_type
+    elif notifier_type == "line":
+        line_token = os.environ.get("CHANNEL_ACCESS_TOKEN")
+        if not line_token:
+            raise ValueError("CHANNEL_ACCESS_TOKEN must be set when using LINE notifier")
+        return create_line_service(line_token), notifier_type
+    elif notifier_type == "email":
+        api_key = os.environ.get("RESEND_API_KEY")
+        from_email = os.environ.get("FROM_EMAIL")
+        to_emails = os.environ.get("TO_EMAILS")
+        if not api_key or not from_email or not to_emails:
+            raise ValueError("RESEND_API_KEY, FROM_EMAIL, and TO_EMAILS must be set when using Email notifier")
+        return create_email_service(api_key, from_email, to_emails.split(",")), notifier_type
+    else:
+        raise ValueError(f"Unsupported notifier type: {notifier_type}. Use 'line', 'slack', or 'email'")
+
+
+def capture_and_encode_image(image_capturer):
+    """
+    Capture an image from the camera and encode it as JPEG bytes
+
+    Args:
+        image_capturer: ImageCapturer instance
+
+    Returns:
+        Optional[bytes]: Image data as bytes, or None if capture/encoding fails
+    """
+    image_frame = image_capturer.capture_image()
+
+    if image_frame is None:
+        return None
+
+    # Convert image frame to bytes
+    success, buffer = cv2.imencode('.jpg', image_frame)
+    if success:
+        return buffer.tobytes()
+    else:
+        print("Failed to encode image")
+        return None
+
+
 def initialize_services(app, servo_controller):
     otp_manager = OTPManager(expiry_seconds=30)
-    line = create_line_service(os.environ["CHANNEL_ACCESS_TOKEN"])
-    # email_service = create_email_service(
-    #     api_key=os.environ["RESEND_API_KEY"],
-    #     from_email=os.environ["FROM_EMAIL"],
-    #     to_emails=os.environ["TO_EMAILS"].split(",")
-    # )
-    
+
+    # Create notifier from environment variables
+    notifier, notifier_type = create_notifier_from_env()
+
+    # Initialize image capturer
+    camera_index = int(os.environ.get("CAMERA_INDEX", "0"))
+    image_capturer = ImageCapturer(camera_index=camera_index)
+
     def on_detection():
         print("Detected target frequencies!")
         otp = otp_manager.generate_otp()
         url = API_ENDPOINT + f"/unlock?otp={otp}"
-        result = line.broadcast_message([
-          {
-            "type": "text",
-            "text": f"Intercom rang just now: {url}"
-          }
-        ])
+        message = f"Intercom rang just now: {url}"
+        image_bytes = capture_and_encode_image(image_capturer)
+        result = notifier.send_notification(message, image_bytes)
+
         if not result["success"]:
-            print(f"Failed to notify via email: {result}")
+            print(f"Failed to send notification via {notifier_type}: {result}")
+        else:
+            print(f"Notification sent successfully via {notifier_type}!")
 
     # Create DTW-based detector with reference audio file
     reference_audio_path = os.environ.get("REFERENCE_AUDIO_PATH", "reference_intercom.wav")
@@ -59,6 +122,10 @@ def initialize_services(app, servo_controller):
 
     app.otp_manager = otp_manager
     app.servo_controller = servo_controller
+    app.image_capturer = image_capturer
+
+    # Register cleanup for camera
+    atexit.register(image_capturer.release)
 
 @app.route('/unlock', methods=['GET'])
 def unlock():
