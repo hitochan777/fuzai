@@ -1,10 +1,11 @@
-import cv2
+import subprocess
+import tempfile
+import os
 from typing import Optional
-import numpy as np
 
 
 class ImageCapturer:
-    """Captures images from a camera device"""
+    """Captures images from a camera device using fswebcam"""
 
     def __init__(self, camera_index: int = 0):
         """
@@ -14,19 +15,35 @@ class ImageCapturer:
             camera_index: Camera device index (default: 0 for primary camera)
         """
         self.camera_index = camera_index
-        self.cap = cv2.VideoCapture(camera_index)
+        self.device_path = f"/dev/video{camera_index}"
 
-    def capture_image(self) -> Optional[np.ndarray]:
+    def capture_image(self) -> Optional[bytes]:
         """
-        Capture a single frame from the camera.
+        Capture a single frame from the camera and return as bytes.
 
         Returns:
-            numpy array containing the captured frame, or None if capture fails
+            bytes containing the captured image (JPEG format), or None if capture fails
         """
-        ret, frame = self.cap.read()
-        if ret:
-            return frame
-        return None
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp_file:
+            tmp_path = tmp_file.name
+
+        try:
+            # Use fswebcam to capture image
+            result = subprocess.run(
+                ['fswebcam', '-d', self.device_path, '--no-banner', '-r', '640x480', tmp_path],
+                capture_output=True,
+                text=True
+            )
+
+            if result.returncode == 0 and os.path.exists(tmp_path):
+                with open(tmp_path, 'rb') as f:
+                    image_bytes = f.read()
+                return image_bytes
+            return None
+        finally:
+            # Clean up temporary file
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
 
     def save_image(self, filepath: str) -> bool:
         """
@@ -38,17 +55,16 @@ class ImageCapturer:
         Returns:
             True if image was successfully captured and saved, False otherwise
         """
-        frame = self.capture_image()
-        if frame is not None:
-            cv2.imwrite(filepath, frame)
-            return True
-        return False
+        result = subprocess.run(
+            ['fswebcam', '-d', self.device_path, '--no-banner', '-r', '640x480', filepath],
+            capture_output=True,
+            text=True
+        )
+        return result.returncode == 0
 
     def release(self):
-        """Release the camera resource"""
-        if self.cap is not None:
-            self.cap.release()
-            self.cap = None
+        """Release the camera resource (no-op for fswebcam)"""
+        pass
 
     def __enter__(self):
         """Context manager entry"""

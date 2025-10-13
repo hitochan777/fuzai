@@ -9,7 +9,6 @@ from sound_detector import SoundDetector
 from audio_capture import AudioCapture
 import os
 import time
-import cv2
 
 API_ENDPOINT = os.environ.get("BASE_URL")
 app = Flask(__name__)
@@ -51,26 +50,16 @@ def create_notifier_from_env():
 
 def capture_and_encode_image(image_capturer):
     """
-    Capture an image from the camera and encode it as JPEG bytes
+    Capture an image from the camera and return as JPEG bytes
 
     Args:
         image_capturer: ImageCapturer instance
 
     Returns:
-        Optional[bytes]: Image data as bytes, or None if capture/encoding fails
+        Optional[bytes]: Image data as bytes, or None if capture fails
     """
-    image_frame = image_capturer.capture_image()
-
-    if image_frame is None:
-        return None
-
-    # Convert image frame to bytes
-    success, buffer = cv2.imencode('.jpg', image_frame)
-    if success:
-        return buffer.tobytes()
-    else:
-        print("Failed to encode image")
-        return None
+    # capture_image() now returns bytes directly (JPEG format)
+    return image_capturer.capture_image()
 
 
 def initialize_services(app, servo_controller, image_capturer):
