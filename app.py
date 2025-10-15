@@ -72,12 +72,18 @@ def initialize_services(app, servo_controller, image_capturer):
         url = API_ENDPOINT + f"/unlock?otp={otp}"
         message = f"Intercom rang just now: {url}"
         image_bytes = capture_and_encode_image(image_capturer)
-        result = notifier.send_notification(message, image_bytes)
+        result = notifier.send_notification(message)
 
         if not result["success"]:
-            print(f"Failed to send notification via {notifier_type}: {result}")
+            print(f"Failed to send notification message via {notifier_type}: {result}")
         else:
-            print(f"Notification sent successfully via {notifier_type}!")
+            print(f"Notification sent successfully message via {notifier_type}!")
+
+        result = notifier.send_notification("", image_bytes)
+        if not result["success"]:
+            print(f"Failed to send notification image via {notifier_type}: {result}")
+        else:
+            print(f"Notification sent successfully image via {notifier_type}!")
 
     # Create DTW-based detector with reference audio file
     reference_audio_path = os.environ.get("REFERENCE_AUDIO_PATH", "reference_intercom.wav")
