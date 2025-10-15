@@ -9,7 +9,6 @@ from sound_detector import SoundDetector
 from audio_capture import AudioCapture
 import os
 import time
-import cv2
 
 API_ENDPOINT = os.environ.get("BASE_URL")
 app = Flask(__name__)
@@ -51,26 +50,16 @@ def create_notifier_from_env():
 
 def capture_and_encode_image(image_capturer):
     """
-    Capture an image from the camera and encode it as JPEG bytes
+    Capture an image from the camera and return as JPEG bytes
 
     Args:
         image_capturer: ImageCapturer instance
 
     Returns:
-        Optional[bytes]: Image data as bytes, or None if capture/encoding fails
+        Optional[bytes]: Image data as bytes, or None if capture fails
     """
-    image_frame = image_capturer.capture_image()
-
-    if image_frame is None:
-        return None
-
-    # Convert image frame to bytes
-    success, buffer = cv2.imencode('.jpg', image_frame)
-    if success:
-        return buffer.tobytes()
-    else:
-        print("Failed to encode image")
-        return None
+    # capture_image() now returns bytes directly (JPEG format)
+    return image_capturer.capture_image()
 
 
 def initialize_services(app, servo_controller, image_capturer):
@@ -83,12 +72,18 @@ def initialize_services(app, servo_controller, image_capturer):
         url = API_ENDPOINT + f"/unlock?otp={otp}"
         message = f"Intercom rang just now: {url}"
         image_bytes = capture_and_encode_image(image_capturer)
-        result = notifier.send_notification(message, image_bytes)
+        result = notifier.send_notification(message)
 
         if not result["success"]:
-            print(f"Failed to send notification via {notifier_type}: {result}")
+            print(f"Failed to send notification message via {notifier_type}: {result}")
         else:
-            print(f"Notification sent successfully via {notifier_type}!")
+            print(f"Notification sent successfully message via {notifier_type}!")
+
+        result = notifier.send_notification("", image_bytes)
+        if not result["success"]:
+            print(f"Failed to send notification image via {notifier_type}: {result}")
+        else:
+            print(f"Notification sent successfully image via {notifier_type}!")
 
     # Create DTW-based detector with reference audio file
     reference_audio_path = os.environ.get("REFERENCE_AUDIO_PATH", "reference_intercom.wav")
