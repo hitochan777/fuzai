@@ -24,7 +24,7 @@ def create_notifier_from_env():
     Raises:
         ValueError: If required environment variables are missing or notifier type is unsupported
     """
-    notifier_type = os.environ.get("NOTIFIER_TYPE", "line").lower()
+    notifier_type = os.environ.get("NOTIFIER_TYPE", "slack").lower()
 
     if notifier_type == "slack":
         slack_token = os.environ.get("SLACK_BOT_TOKEN")
